@@ -12,6 +12,16 @@
         Linear
     }
 
+    public enum ChunkType
+    {
+        QOI_OP_RGB,
+        QOI_OP_RGBA,
+        QOI_OP_INDEX,
+        QOI_OP_DIFF,
+        QOI_OP_LUMA,
+        QOI_OP_RUN
+    }
+
     public struct Pixel
     {
         public byte Red;
