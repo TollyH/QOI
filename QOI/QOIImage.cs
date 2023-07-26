@@ -30,14 +30,14 @@
 
     public class QOIImage
     {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        public uint Width { get; private set; }
+        public uint Height { get; private set; }
         public ChannelType Channels { get; private set; }
         public ColorspaceType Colorspace { get; private set; }
 
         public Pixel[] Pixels { get; private set; }
 
-        public QOIImage(int width, int height, ChannelType channels, ColorspaceType colorspace)
+        public QOIImage(uint width, uint height, ChannelType channels, ColorspaceType colorspace)
         {
             Width = width;
             Height = height;
@@ -47,7 +47,7 @@
             Pixels = new Pixel[Width * Height];
         }
 
-        public QOIImage(int width, int height, ChannelType channels, ColorspaceType colorspace, Pixel[] pixels) : this(width, height, channels, colorspace)
+        public QOIImage(uint width, uint height, ChannelType channels, ColorspaceType colorspace, Pixel[] pixels) : this(width, height, channels, colorspace)
         {
             if (pixels.Length != width * height)
             {
