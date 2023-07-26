@@ -45,7 +45,20 @@
         public ChannelType Channels { get; private set; }
         public ColorspaceType Colorspace { get; private set; }
 
-        public Pixel[] Pixels { get; private set; }
+        private Pixel[] _pixels;
+        public Pixel[] Pixels
+        {
+            get => _pixels;
+            set
+            {
+                if (value.Length != Width * Height)
+                {
+                    throw new ArgumentException($"Pixels array is an invalid size. Expected {Width * Height} pixels, got {value.Length}.");
+                }
+                _pixels = value;
+            }
+        }
+        public byte[] TrailingData { get; set; } = Array.Empty<byte>();
 
         public QOIImage(uint width, uint height, ChannelType channels, ColorspaceType colorspace)
         {
@@ -54,7 +67,7 @@
             Channels = channels;
             Colorspace = colorspace;
 
-            Pixels = new Pixel[Width * Height];
+            _pixels = new Pixel[Width * Height];
         }
 
         public QOIImage(uint width, uint height, ChannelType channels, ColorspaceType colorspace, Pixel[] pixels) : this(width, height, channels, colorspace)
@@ -64,7 +77,7 @@
                 throw new ArgumentException($"Pixels array is an invalid size. Expected {width * height} pixels, got {pixels.Length}.");
             }
 
-            Pixels = pixels;
+            _pixels = pixels;
         }
     }
 }
