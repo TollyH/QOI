@@ -4,6 +4,13 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Company>TollyH</Company>
+    <Description>A basic .NET encoder/decoder for the QOI image format</Description>
+    <PackageProjectUrl>https://github.com/TollyH/QOI</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TollyH/QOI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors>TollyH</Authors>
+    <Title>QOI</Title>
   </PropertyGroup>
 
 </Project>
