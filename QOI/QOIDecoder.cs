@@ -5,7 +5,7 @@ namespace QOI
     public static class QOIDecoder
     {
         public static readonly byte[] MagicBytes = new byte[4] { 113, 111, 105, 102 };  // 'qoif'
-        public static readonly byte[] EndMarker = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+        public static readonly byte[] EndMarker = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
         /// <summary>
         /// Decode a QOI image byte stream.
