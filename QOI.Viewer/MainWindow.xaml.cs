@@ -38,7 +38,7 @@ namespace QOI.Viewer
                 switch (extension)
                 {
                     case "qoi":
-                        QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName);
+                        QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName, requireEndTag: false);
                         imageView.Source = newQOIImage.ConvertToBitmapImage();
                         break;
                     case "png":
@@ -54,8 +54,12 @@ namespace QOI.Viewer
             }
             catch
             {
+#if DEBUG
+                throw;
+#else
                 _ = MessageBox.Show("Failed to open image. It may be missing or corrupt.",
                 "Image Read Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+#endif
             }
         }
 
