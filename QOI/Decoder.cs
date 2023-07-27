@@ -54,13 +54,15 @@ namespace QOI
         {
             Pixel[] decodedPixels = new Pixel[pixelCount];
             Pixel previousPixel = new(0, 0, 0, 255);
-            Pixel[] index = new Pixel[64];
+            Pixel[] colorArray = new Pixel[64];
 
             int pixelIndex = 0;
-            for (int dataIndex = 0; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
+            int dataIndex = 0;
+            for (; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
             {
-                index[previousPixel.ColorHash()] = previousPixel;
-                switch ((ChunkType)data[dataIndex])
+                colorArray[previousPixel.ColorHash()] = previousPixel;
+                byte tagByte = data[dataIndex];
+                switch ((ChunkType)tagByte)
                 {
                     case ChunkType.QOI_OP_RGB:
                         decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], previousPixel.Alpha);
@@ -69,16 +71,46 @@ namespace QOI
                         decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], data[++dataIndex]);
                         break;
                     default:
-                        switch ((ChunkType)(data[dataIndex] >> 6))
+                        switch ((ChunkType)(tagByte >> 6))
                         {
                             case ChunkType.QOI_OP_INDEX:
+                                decodedPixels[pixelIndex] = colorArray[0b00111111 & tagByte];
                                 break;
                             case ChunkType.QOI_OP_DIFF:
-                                break;
+                                {
+                                    int redDiff = ((0b00110000 & tagByte) >> 4) - 2;
+                                    int greenDiff = ((0b00001100 & tagByte) >> 2) - 2;
+                                    int blueDiff = (0b00000011 & tagByte) - 2;
+                                    decodedPixels[pixelIndex] = new Pixel(
+                                        (byte)(previousPixel.Red + redDiff),
+                                        (byte)(previousPixel.Green + greenDiff),
+                                        (byte)(previousPixel.Blue + blueDiff),
+                                        previousPixel.Alpha);
+                                    break;
+                                }
                             case ChunkType.QOI_OP_LUMA:
-                                break;
+                                {
+                                    int greenDiff = (0b00111111 & tagByte) - 32;
+                                    byte nextByte = data[++dataIndex];
+                                    int redDiff = ((0b11110000 & nextByte) >> 4) - 8;
+                                    int blueDiff = ((0b00001111 & nextByte) >> 4) - 8;
+                                    decodedPixels[pixelIndex] = new Pixel(
+                                        (byte)(previousPixel.Red + redDiff - greenDiff),
+                                        (byte)(previousPixel.Green + greenDiff),
+                                        (byte)(previousPixel.Blue + blueDiff - greenDiff),
+                                        previousPixel.Alpha);
+                                    break;
+                                }
                             case ChunkType.QOI_OP_RUN:
-                                break;
+                                {
+                                    int runLength = (0b00111111 & tagByte) + 1;
+                                    for (int i = 0; i < runLength; i++)
+                                    {
+                                        decodedPixels[pixelIndex++] = previousPixel;
+                                    }
+                                    pixelIndex--;
+                                    break;
+                                }
                         }
                         break;
                 }
