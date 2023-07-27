@@ -40,7 +40,8 @@ namespace QOI.Viewer
                     case "qoi":
                         QOIDecoder decoder = new()
                         {
-                            RequireEndTag = false
+                            RequireEndTag = false,
+                            DebugMode = configDebugMode.IsChecked
                         };
                         QOIImage newQOIImage = decoder.DecodeImageFile(fileDialog.FileName);
                         imageView.Source = newQOIImage.ConvertToBitmapImage();

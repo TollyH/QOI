@@ -13,6 +13,12 @@ namespace QOI
         public bool RequireEndTag { get; set; } = true;
 
         /// <summary>
+        /// If <see langword="true"/>, all pixel colors are replaced with ones representing what chunk type was used to encode each pixel.
+        /// </summary>
+        /// <remarks>Only affects Decode and DecodeImageFile methods, not DecodePixels</remarks>
+        public bool DebugMode { get; set; } = false;
+
+        /// <summary>
         /// Set whenever a decoding method is called to signify whether or not an end tag was present in the previously decoded image
         /// </summary>
         public bool EndTagWasPresent { get; private set; } = true;
@@ -43,9 +49,12 @@ namespace QOI
                 throw new ArgumentException($"Colorspace ID is invalid. Expected 0 or 1, got {colorspace}");
             }
 
+            byte[] trailingData = Array.Empty<byte>();
             QOIImage image = new(width, height, (ChannelType)channels, (ColorspaceType)colorspace)
             {
-                Pixels = DecodePixels(data[14..], width * height, out byte[] trailingData),
+                Pixels = DebugMode
+                    ? GenerateDebugPixels(data[14..], width * height)
+                    : DecodePixels(data[14..], width * height, out trailingData),
                 TrailingData = trailingData
             };
 
@@ -56,7 +65,7 @@ namespace QOI
         /// Decode a QOI image data stream into an array of RGBA pixels.
         /// </summary>
         /// <param name="data">
-        /// The data from the QOI file. The file header should not be included, but the end marker must be included,
+        /// The data from the QOI file. The file header must not be included, but the end marker must be included,
         /// unless <see cref="RequireEndTag"/> is <see langword="false"/>.
         /// </param>
         /// <param name="trailingData">
@@ -96,10 +105,10 @@ namespace QOI
                                     int greenDiff = ((0b00001100 & tagByte) >> 2) - 2;
                                     int blueDiff = (0b00000011 & tagByte) - 2;
                                     decodedPixels[pixelIndex] = new Pixel(
-                                        (byte)(previousPixel.Red + redDiff),
-                                        (byte)(previousPixel.Green + greenDiff),
-                                        (byte)(previousPixel.Blue + blueDiff),
-                                        previousPixel.Alpha);
+                                            (byte)(previousPixel.Red + redDiff),
+                                            (byte)(previousPixel.Green + greenDiff),
+                                            (byte)(previousPixel.Blue + blueDiff),
+                                            previousPixel.Alpha);
                                     break;
                                 }
                             case ChunkType.QOI_OP_LUMA:
@@ -109,10 +118,10 @@ namespace QOI
                                     int redDiff = ((0b11110000 & nextByte) >> 4) - 8;
                                     int blueDiff = (0b00001111 & nextByte) - 8;
                                     decodedPixels[pixelIndex] = new Pixel(
-                                        (byte)(previousPixel.Red + redDiff + greenDiff),
-                                        (byte)(previousPixel.Green + greenDiff),
-                                        (byte)(previousPixel.Blue + blueDiff + greenDiff),
-                                        previousPixel.Alpha);
+                                            (byte)(previousPixel.Red + redDiff + greenDiff),
+                                            (byte)(previousPixel.Green + greenDiff),
+                                            (byte)(previousPixel.Blue + blueDiff + greenDiff),
+                                            previousPixel.Alpha);
                                     break;
                                 }
                             case ChunkType.QOI_OP_RUN:
@@ -153,7 +162,7 @@ namespace QOI
         /// Decode a QOI image data stream into an array of RGBA pixels.
         /// </summary>
         /// <param name="data">
-        /// The data from the QOI file. The file header should not be included, but the end marker must be included,
+        /// The data from the QOI file. The file header must not be included, but the end marker must be included,
         /// unless <see cref="RequireEndTag"/> is <see langword="false"/>.
         /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
@@ -190,6 +199,61 @@ namespace QOI
         public QOIImage DecodeImageFile(FileInfo file)
         {
             return Decode(File.ReadAllBytes(file.FullName));
+        }
+
+        /// <summary>
+        /// Generate an image where each pixel value is based on the chunk type used to encode it, instead of it's actual color value.
+        /// </summary>
+        /// <param name="data">
+        /// The data from the QOI file. The file header must not be included.
+        /// </param>
+        /// <returns>An array of <see cref="Pixel"/> instances.</returns>
+        public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount)
+        {
+            Pixel[] generatedPixels = new Pixel[pixelCount];
+
+            int pixelIndex = 0;
+            int dataIndex = 0;
+            for (; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
+            {
+                byte tagByte = data[dataIndex];
+                switch ((ChunkType)tagByte)
+                {
+                    case ChunkType.QOI_OP_RGB:
+                        generatedPixels[pixelIndex] = new Pixel(255, 0, 0);
+                        dataIndex += 3;
+                        break;
+                    case ChunkType.QOI_OP_RGBA:
+                        generatedPixels[pixelIndex] = new Pixel(0, 255, 0);
+                        dataIndex += 4;
+                        break;
+                    default:
+                        switch ((ChunkType)(tagByte >> 6))
+                        {
+                            case ChunkType.QOI_OP_INDEX:
+                                generatedPixels[pixelIndex] = new Pixel(0, 0, 255);
+                                break;
+                            case ChunkType.QOI_OP_DIFF:
+                                generatedPixels[pixelIndex] = new Pixel(255, 255, 0);
+                                break;
+                            case ChunkType.QOI_OP_LUMA:
+                                generatedPixels[pixelIndex] = new Pixel(255, 0, 255);
+                                dataIndex++;
+                                break;
+                            case ChunkType.QOI_OP_RUN:
+                                int runLength = (0b00111111 & tagByte) + 1;
+                                for (int i = 0; i < runLength; i++)
+                                {
+                                    generatedPixels[pixelIndex++] = new Pixel(0, 255, 255);
+                                }
+                                pixelIndex--;
+                                break;
+                        }
+                        break;
+                }
+            }
+
+            return generatedPixels;
         }
     }
 }
