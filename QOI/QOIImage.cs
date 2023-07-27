@@ -39,8 +39,7 @@
 
         public readonly byte ColorHash()
         {
-            // % 255 is needed because C# implicitly casts mathematical operations on byte to int
-            return (byte)(((Red * 3) + (Green * 5) + (Blue * 7) + (Alpha * 11)) % 255 % 64);
+            return (byte)(((Red * 3) + (Green * 5) + (Blue * 7) + (Alpha * 11)) % 64);
         }
     }
 
