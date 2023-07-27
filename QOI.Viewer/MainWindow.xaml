@@ -10,6 +10,7 @@
         <Menu VerticalAlignment="Top">
             <MenuItem Header="File">
                 <MenuItem Header="Open" Click="OpenItem_Click"/>
+                <MenuItem Header="Save As PNG" Click="SaveItem_Click"/>
             </MenuItem>
         </Menu>
         <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality"/>
