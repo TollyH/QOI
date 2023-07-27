@@ -13,7 +13,7 @@
                 <MenuItem Header="Save As PNG" Click="SaveItem_Click"/>
             </MenuItem>
             <MenuItem Header="Config">
-                <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True"/>
+                <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>
             </MenuItem>
         </Menu>
         <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality"/>

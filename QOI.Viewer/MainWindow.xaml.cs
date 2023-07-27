@@ -10,9 +10,60 @@ namespace QOI.Viewer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private string openFile = "";
+
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        public void LoadImage(string path)
+        {
+            string extension = path.Split('.')[^1].ToLower();
+
+            try
+            {
+                switch (extension)
+                {
+                    case "qoi":
+                        QOIDecoder decoder = new()
+                        {
+                            RequireEndTag = false,
+                            DebugMode = configDebugMode.IsChecked
+                        };
+                        QOIImage newQOIImage = decoder.DecodeImageFile(path);
+                        imageView.Source = newQOIImage.ConvertToBitmapImage();
+
+                        if (!decoder.EndTagWasPresent)
+                        {
+                            _ = MessageBox.Show("End tag was missing from loaded file.",
+                            "End Tag Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+
+                        break;
+                    case "png":
+                    case "jpg":
+                    case "jpeg":
+                        imageView.Source = new BitmapImage(new System.Uri(path));
+                        break;
+                    default:
+                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                }
+            }
+            catch
+            {
+#if DEBUG
+                throw;
+#else
+                _ = MessageBox.Show("Failed to open image. It may be missing or corrupt.",
+                "Image Read Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+#endif
+            }
+
+            openFile = path;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -31,48 +82,7 @@ namespace QOI.Viewer
                 return;
             }
 
-            string extension = fileDialog.FileName.Split('.')[^1].ToLower();
-
-            try
-            {
-                switch (extension)
-                {
-                    case "qoi":
-                        QOIDecoder decoder = new()
-                        {
-                            RequireEndTag = false,
-                            DebugMode = configDebugMode.IsChecked
-                        };
-                        QOIImage newQOIImage = decoder.DecodeImageFile(fileDialog.FileName);
-                        imageView.Source = newQOIImage.ConvertToBitmapImage();
-
-                        if (!decoder.EndTagWasPresent)
-                        {
-                            _ = MessageBox.Show("End tag was missing from loaded file.",
-                            "End Tag Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-
-                        break;
-                    case "png":
-                    case "jpg":
-                    case "jpeg":
-                        imageView.Source = new BitmapImage(new System.Uri(fileDialog.FileName));
-                        break;
-                    default:
-                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
-                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
-                        break;
-                }
-            }
-            catch
-            {
-#if DEBUG
-                throw;
-#else
-                _ = MessageBox.Show("Failed to open image. It may be missing or corrupt.",
-                "Image Read Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-#endif
-            }
+            LoadImage(fileDialog.FileName);
         }
 
         private void SaveItem_Click(object sender, RoutedEventArgs e)
@@ -99,6 +109,14 @@ namespace QOI.Viewer
             encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
             using FileStream fileStream = new(fileDialog.FileName, FileMode.Create);
             encoder.Save(fileStream);
+        }
+
+        private void configDebugMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(openFile))
+            {
+                LoadImage(openFile);
+            }
         }
     }
 }
