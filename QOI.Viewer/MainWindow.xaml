@@ -1,0 +1,17 @@
+﻿<Window x:Class="QOI.Viewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QOI.Viewer"
+        mc:Ignorable="d"
+        Title="QOI Image Viewer" Height="450" Width="800">
+    <Grid>
+        <Menu VerticalAlignment="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="Open" Click="OpenItem_Click"/>
+            </MenuItem>
+        </Menu>
+        <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+    </Grid>
+</Window>

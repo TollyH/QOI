@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Title>$(AssemblyName)</Title>
+    <Company>TollyH</Company>
+    <Authors>TollyH</Authors>
+    <Description>A lightweight viewer for QOI images</Description>
+    <PackageProjectUrl>https://github.com/TollyH/QOI</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/TollyH/QOI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QOI\QOI.csproj" />
+  </ItemGroup>
+
+</Project>
