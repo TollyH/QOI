@@ -84,7 +84,7 @@ namespace QOI
                         switch ((ChunkType)(tagByte >> 6))
                         {
                             case ChunkType.QOI_OP_INDEX:
-                                decodedPixels[pixelIndex] = colorArray[0b00111111 & tagByte];
+                                decodedPixels[pixelIndex] = colorArray[tagByte];
                                 break;
                             case ChunkType.QOI_OP_DIFF:
                                 {
