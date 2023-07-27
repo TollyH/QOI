@@ -20,7 +20,10 @@ namespace QOI.Viewer
             OpenFileDialog fileDialog = new()
             {
                 CheckFileExists = true,
-                Filter = "QOI Image File|*.qoi"
+                Filter = "All Supported Types|*.qoi;*.png;*.jpg;*.jpeg" +
+                "|QOI Image File|*.qoi" +
+                "|PNG Image File|*.png" +
+                "|JPEG Image File|*.jpg;*.jpeg"
             };
 
             if (!fileDialog.ShowDialog() ?? true)
@@ -28,8 +31,24 @@ namespace QOI.Viewer
                 return;
             }
 
-            QOIImage image = QOIDecoder.DecodeImageFile(fileDialog.FileName);
-            imageView.Source = image.ConvertToBitmapImage();
+            string extension = fileDialog.FileName.Split('.')[^1].ToLower();
+
+            switch (extension)
+            {
+                case "qoi":
+                    QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName);
+                    imageView.Source = newQOIImage.ConvertToBitmapImage();
+                    break;
+                case "png":
+                case "jpg":
+                case "jpeg":
+                    imageView.Source = new BitmapImage(new System.Uri(fileDialog.FileName));
+                    break;
+                default:
+                    _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                        "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+            }
         }
 
         private void SaveItem_Click(object sender, RoutedEventArgs e)
