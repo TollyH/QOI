@@ -34,7 +34,7 @@ namespace QOI
 
             QOIImage image = new(width, height, (ChannelType)channels, (ColorspaceType)colorspace)
             {
-                Pixels = DecodePixels(data[14..], out byte[] trailingData),
+                Pixels = DecodePixels(data[14..], width * height, out byte[] trailingData),
                 TrailingData = trailingData
             };
 
@@ -50,9 +50,42 @@ namespace QOI
         /// Will be an empty array if there is none.
         /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data, out byte[] trailingData)
+        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
         {
-            throw new NotImplementedException();
+            Pixel[] decodedPixels = new Pixel[pixelCount];
+            Pixel previousPixel = new(0, 0, 0, 255);
+            Pixel[] index = new Pixel[64];
+
+            int pixelIndex = 0;
+            for (int dataIndex = 0; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
+            {
+                index[previousPixel.ColorHash()] = previousPixel;
+                switch ((ChunkType)data[dataIndex])
+                {
+                    case ChunkType.QOI_OP_RGB:
+                        decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], previousPixel.Alpha);
+                        break;
+                    case ChunkType.QOI_OP_RGBA:
+                        decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], data[++dataIndex]);
+                        break;
+                    default:
+                        switch ((ChunkType)(data[dataIndex] >> 6))
+                        {
+                            case ChunkType.QOI_OP_INDEX:
+                                break;
+                            case ChunkType.QOI_OP_DIFF:
+                                break;
+                            case ChunkType.QOI_OP_LUMA:
+                                break;
+                            case ChunkType.QOI_OP_RUN:
+                                break;
+                        }
+                        break;
+                }
+                previousPixel = decodedPixels[pixelIndex];
+            }
+
+            return decodedPixels;
         }
 
         /// <summary>
@@ -60,9 +93,9 @@ namespace QOI
         /// </summary>
         /// <param name="data">The data from the QOI file. The file header should not be included.</param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data)
+        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount)
         {
-            return DecodePixels(data, out _);
+            return DecodePixels(data, pixelCount, out _);
         }
     }
 }
