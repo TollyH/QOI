@@ -4,7 +4,8 @@ namespace QOI
 {
     public static class QOIDecoder
     {
-        public static readonly byte[] MagicBytes = new byte[] { 113, 111, 105, 102 };  // 'qoif'
+        public static readonly byte[] MagicBytes = new byte[4] { 113, 111, 105, 102 };  // 'qoif'
+        public static readonly byte[] EndMarker = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
 
         /// <summary>
         /// Decode a QOI image byte stream.
@@ -44,13 +45,19 @@ namespace QOI
         /// <summary>
         /// Decode a QOI image data stream into an array of RGBA pixels.
         /// </summary>
-        /// <param name="data">The data from the QOI file. The file header should not be included.</param>
+        /// <param name="data">
+        /// The data from the QOI file. The file header should not be included, but the end marker must be included,
+        /// unless <paramref name="requireEndTag"/> is <see langword="false"/>.
+        /// </param>
         /// <param name="trailingData">
         /// A byte array of any extra data appended on to the end of the QOI data stream.
         /// Will be an empty array if there is none.
         /// </param>
+        /// <param name="requireEndTag">
+        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
+        /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
+        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData, bool requireEndTag = true)
         {
             Pixel[] decodedPixels = new Pixel[pixelCount];
             Pixel previousPixel = new(0, 0, 0, 255);
@@ -117,17 +124,36 @@ namespace QOI
                 previousPixel = decodedPixels[pixelIndex];
             }
 
+            if (!data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
+            {
+                if (requireEndTag)
+                {
+                    throw new ArgumentException("End tag was missing from data stream.");
+                }
+            }
+            else
+            {
+                dataIndex += 8;
+            }
+
+            trailingData = data[dataIndex..].ToArray();
             return decodedPixels;
         }
 
         /// <summary>
         /// Decode a QOI image data stream into an array of RGBA pixels.
         /// </summary>
-        /// <param name="data">The data from the QOI file. The file header should not be included.</param>
+        /// <param name="data">
+        /// The data from the QOI file. The file header should not be included, but the end marker must be included,
+        /// unless <paramref name="requireEndTag"/> is <see langword="false"/>.
+        /// </param>
+        /// <param name="requireEndTag">
+        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
+        /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount)
+        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, bool requireEndTag = true)
         {
-            return DecodePixels(data, pixelCount, out _);
+            return DecodePixels(data, pixelCount, out _, requireEndTag);
         }
     }
 }
