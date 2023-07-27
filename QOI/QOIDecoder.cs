@@ -2,20 +2,27 @@
 
 namespace QOI
 {
-    public static class QOIDecoder
+    public class QOIDecoder
     {
         public static readonly byte[] MagicBytes = new byte[4] { 113, 111, 105, 102 };  // 'qoif'
         public static readonly byte[] EndMarker = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
         /// <summary>
+        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from a decoded image
+        /// </summary>
+        public bool RequireEndTag { get; set; } = true;
+
+        /// <summary>
+        /// Set whenever a decoding method is called to signify whether or not an end tag was present in the previously decoded image
+        /// </summary>
+        public bool EndTagWasPresent { get; private set; } = true;
+
+        /// <summary>
         /// Decode a QOI image byte stream.
         /// </summary>
         /// <param name="data">A byte stream containing the entirety of a QOI file.</param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
-        /// </param>
         /// <returns>A fully decoded <see cref="QOIImage"/> instance.</returns>
-        public static QOIImage Decode(Span<byte> data, bool requireEndTag = true)
+        public QOIImage Decode(Span<byte> data)
         {
             if (!data[..4].SequenceEqual(MagicBytes))
             {
@@ -38,7 +45,7 @@ namespace QOI
 
             QOIImage image = new(width, height, (ChannelType)channels, (ColorspaceType)colorspace)
             {
-                Pixels = DecodePixels(data[14..], width * height, out byte[] trailingData, requireEndTag),
+                Pixels = DecodePixels(data[14..], width * height, out byte[] trailingData),
                 TrailingData = trailingData
             };
 
@@ -50,17 +57,14 @@ namespace QOI
         /// </summary>
         /// <param name="data">
         /// The data from the QOI file. The file header should not be included, but the end marker must be included,
-        /// unless <paramref name="requireEndTag"/> is <see langword="false"/>.
+        /// unless <see cref="RequireEndTag"/> is <see langword="false"/>.
         /// </param>
         /// <param name="trailingData">
         /// A byte array of any extra data appended on to the end of the QOI data stream.
         /// Will be an empty array if there is none.
         /// </param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
-        /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData, bool requireEndTag = true)
+        public Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
         {
             Pixel[] decodedPixels = new Pixel[pixelCount];
             Pixel previousPixel = new(0, 0, 0, 255);
@@ -127,15 +131,17 @@ namespace QOI
                 previousPixel = decodedPixels[pixelIndex];
             }
 
-            if (dataIndex + 8 >= data.Length || !data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
+            if (dataIndex + 8 > data.Length || !data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
             {
-                if (requireEndTag)
+                EndTagWasPresent = false;
+                if (RequireEndTag)
                 {
                     throw new ArgumentException("End tag was missing from data stream.");
                 }
             }
             else
             {
+                EndTagWasPresent = true;
                 dataIndex += 8;
             }
 
@@ -148,54 +154,42 @@ namespace QOI
         /// </summary>
         /// <param name="data">
         /// The data from the QOI file. The file header should not be included, but the end marker must be included,
-        /// unless <paramref name="requireEndTag"/> is <see langword="false"/>.
-        /// </param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
+        /// unless <see cref="RequireEndTag"/> is <see langword="false"/>.
         /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public static Pixel[] DecodePixels(Span<byte> data, uint pixelCount, bool requireEndTag = true)
+        public Pixel[] DecodePixels(Span<byte> data, uint pixelCount)
         {
-            return DecodePixels(data, pixelCount, out _, requireEndTag);
+            return DecodePixels(data, pixelCount, out _);
         }
 
         /// <summary>
         /// Decode a QOI image file.
         /// </summary>
         /// <param name="path">The path to the image file to decode.</param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
-        /// </param>
         /// <returns>A fully decoded <see cref="QOIImage"/> instance.</returns>
-        public static QOIImage DecodeImageFile(string path, bool requireEndTag = true)
+        public QOIImage DecodeImageFile(string path)
         {
-            return Decode(File.ReadAllBytes(path), requireEndTag);
+            return Decode(File.ReadAllBytes(path));
         }
 
         /// <summary>
         /// Decode a QOI image file.
         /// </summary>
         /// <param name="uri">A URI pointing to the image file to decode.</param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
-        /// </param>
         /// <returns>A fully decoded <see cref="QOIImage"/> instance.</returns>
-        public static QOIImage DecodeImageFile(Uri uri, bool requireEndTag = true)
+        public QOIImage DecodeImageFile(Uri uri)
         {
-            return Decode(File.ReadAllBytes(uri.AbsolutePath), requireEndTag);
+            return Decode(File.ReadAllBytes(uri.AbsolutePath));
         }
 
         /// <summary>
         /// Decode a QOI image file.
         /// </summary>
         /// <param name="file">The file info instance representing the image file to decode.</param>
-        /// <param name="requireEndTag">
-        /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from the data stream.
-        /// </param>
         /// <returns>A fully decoded <see cref="QOIImage"/> instance.</returns>
-        public static QOIImage DecodeImageFile(FileInfo file, bool requireEndTag = true)
+        public QOIImage DecodeImageFile(FileInfo file)
         {
-            return Decode(File.ReadAllBytes(file.FullName), requireEndTag);
+            return Decode(File.ReadAllBytes(file.FullName));
         }
     }
 }

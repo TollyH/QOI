@@ -38,8 +38,19 @@ namespace QOI.Viewer
                 switch (extension)
                 {
                     case "qoi":
-                        QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName, requireEndTag: false);
+                        QOIDecoder decoder = new()
+                        {
+                            RequireEndTag = false
+                        };
+                        QOIImage newQOIImage = decoder.DecodeImageFile(fileDialog.FileName);
                         imageView.Source = newQOIImage.ConvertToBitmapImage();
+
+                        if (!decoder.EndTagWasPresent)
+                        {
+                            _ = MessageBox.Show("End tag was missing from loaded file.",
+                            "End Tag Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+
                         break;
                     case "png":
                     case "jpg":
