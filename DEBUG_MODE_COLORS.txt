@@ -1,0 +1,7 @@
+#FF0000 (Red):     QOI_OP_RGB   [4 bytes per pixel]
+#00FF00 (Green):   QOI_OP_RGBA  [5 bytes per pixel]
+#0000FF (Blue):    QOI_OP_INDEX [1 byte  per pixel]
+#FFFF00 (Yellow):  QOI_OP_DIFF  [1 byte  per pixel]
+#FF00FF (Magenta): QOI_OP_LUMA  [2 bytes per pixel]
+#00FFFF (Cyan):    QOI_OP_RUN   [1 byte  per run (1-62) pixels]
+#FFFFFF (White):   Continued run
