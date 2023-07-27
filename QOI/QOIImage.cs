@@ -2,14 +2,14 @@
 {
     public enum ChannelType : byte
     {
-        RGB,
-        RGBA
+        RGB = 3,
+        RGBA = 4
     }
 
     public enum ColorspaceType : byte
     {
-        sRGB,
-        Linear
+        sRGB = 0,
+        Linear = 1
     }
 
     public enum ChunkType : byte
