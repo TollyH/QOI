@@ -103,11 +103,11 @@ namespace QOI
                                     int greenDiff = (0b00111111 & tagByte) - 32;
                                     byte nextByte = data[++dataIndex];
                                     int redDiff = ((0b11110000 & nextByte) >> 4) - 8;
-                                    int blueDiff = ((0b00001111 & nextByte) >> 4) - 8;
+                                    int blueDiff = (0b00001111 & nextByte) - 8;
                                     decodedPixels[pixelIndex] = new Pixel(
-                                        (byte)(previousPixel.Red + redDiff - greenDiff),
+                                        (byte)(previousPixel.Red + redDiff + greenDiff),
                                         (byte)(previousPixel.Green + greenDiff),
-                                        (byte)(previousPixel.Blue + blueDiff - greenDiff),
+                                        (byte)(previousPixel.Blue + blueDiff + greenDiff),
                                         previousPixel.Alpha);
                                     break;
                                 }
