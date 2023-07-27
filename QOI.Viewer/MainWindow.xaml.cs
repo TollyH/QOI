@@ -33,21 +33,29 @@ namespace QOI.Viewer
 
             string extension = fileDialog.FileName.Split('.')[^1].ToLower();
 
-            switch (extension)
+            try
             {
-                case "qoi":
-                    QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName);
-                    imageView.Source = newQOIImage.ConvertToBitmapImage();
-                    break;
-                case "png":
-                case "jpg":
-                case "jpeg":
-                    imageView.Source = new BitmapImage(new System.Uri(fileDialog.FileName));
-                    break;
-                default:
-                    _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
-                        "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
-                    break;
+                switch (extension)
+                {
+                    case "qoi":
+                        QOIImage newQOIImage = QOIDecoder.DecodeImageFile(fileDialog.FileName);
+                        imageView.Source = newQOIImage.ConvertToBitmapImage();
+                        break;
+                    case "png":
+                    case "jpg":
+                    case "jpeg":
+                        imageView.Source = new BitmapImage(new System.Uri(fileDialog.FileName));
+                        break;
+                    default:
+                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                        break;
+                }
+            }
+            catch
+            {
+                _ = MessageBox.Show("Failed to open image. It may be missing or corrupt.",
+                "Image Read Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
