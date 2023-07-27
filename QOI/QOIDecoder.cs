@@ -242,9 +242,10 @@ namespace QOI
                                 break;
                             case ChunkType.QOI_OP_RUN:
                                 int runLength = (0b00111111 & tagByte) + 1;
-                                for (int i = 0; i < runLength; i++)
+                                generatedPixels[pixelIndex++] = new Pixel(0, 255, 255);
+                                for (int i = 1; i < runLength; i++)
                                 {
-                                    generatedPixels[pixelIndex++] = new Pixel(0, 255, 255);
+                                    generatedPixels[pixelIndex++] = new Pixel(255, 255, 255);
                                 }
                                 pixelIndex--;
                                 break;
