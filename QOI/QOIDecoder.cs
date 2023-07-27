@@ -127,7 +127,7 @@ namespace QOI
                 previousPixel = decodedPixels[pixelIndex];
             }
 
-            if (!data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
+            if (dataIndex + 8 >= data.Length || !data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
             {
                 if (requireEndTag)
                 {
