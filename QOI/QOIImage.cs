@@ -27,7 +27,7 @@
         public byte Red;
         public byte Green;
         public byte Blue;
-        public byte Alpha = 255;
+        public byte Alpha;
 
         public Pixel(byte red, byte green, byte blue, byte alpha = 255)
         {
