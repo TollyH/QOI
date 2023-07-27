@@ -2,7 +2,7 @@
 
 namespace QOI
 {
-    public static class Decoder
+    public static class QOIDecoder
     {
         public static readonly byte[] MagicBytes = new byte[] { 113, 111, 105, 102 };  // 'qoif'
 
