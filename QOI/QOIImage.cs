@@ -14,12 +14,12 @@
 
     public enum ChunkType
     {
-        QOI_OP_RGB,
-        QOI_OP_RGBA,
-        QOI_OP_INDEX,
-        QOI_OP_DIFF,
-        QOI_OP_LUMA,
-        QOI_OP_RUN
+        QOI_OP_RGB = 0b11111110,
+        QOI_OP_RGBA = 0b11111111,
+        QOI_OP_INDEX = 0b00,
+        QOI_OP_DIFF = 0b01,
+        QOI_OP_LUMA = 0b10,
+        QOI_OP_RUN = 0b11
     }
 
     public struct Pixel
