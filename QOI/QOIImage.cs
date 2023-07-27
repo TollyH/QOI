@@ -1,18 +1,18 @@
 ﻿namespace QOI
 {
-    public enum ChannelType
+    public enum ChannelType : byte
     {
         RGB,
         RGBA
     }
 
-    public enum ColorspaceType
+    public enum ColorspaceType : byte
     {
         sRGB,
         Linear
     }
 
-    public enum ChunkType
+    public enum ChunkType : byte
     {
         QOI_OP_RGB = 0b11111110,
         QOI_OP_RGBA = 0b11111111,
