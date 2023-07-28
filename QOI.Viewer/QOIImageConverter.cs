@@ -35,7 +35,7 @@ namespace QOI.Viewer
 
             // Convert Bitmap to BitmapImage for use with WPF
             using MemoryStream stream = new();
-            bitmap.Save(stream, ImageFormat.Bmp);
+            bitmap.Save(stream, ImageFormat.Png);
 
             BitmapImage bitmapImage = new();
             bitmapImage.BeginInit();
