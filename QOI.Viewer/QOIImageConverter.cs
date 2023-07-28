@@ -45,5 +45,42 @@ namespace QOI.Viewer
             bitmapImage.Freeze();
             return bitmapImage;
         }
+
+        public static QOIImage ConvertToQOIImage(this BitmapImage image)
+        {
+            // Convert BitmapImage to Bitmap
+            Bitmap bitmap;
+            using (MemoryStream outStream = new())
+            {
+                BitmapEncoder enc = new PngBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(image));
+                enc.Save(outStream);
+                bitmap = new Bitmap(outStream);
+            }
+
+            int width = bitmap.Width;
+            int height = bitmap.Height;
+            QOIImage qoiImage = new((uint)width, (uint)height, ChannelType.RGBA, ColorspaceType.sRGB);
+
+            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+
+            // Copy pixel array to new QOIImage object
+            unsafe
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    byte* row = (byte*)bmpData.Scan0 + (y * bmpData.Stride);
+                    for (int x = 0; x < width; x++)
+                    {
+                        Pixel pixel = new(row[(x * 4) + 2], row[(x * 4) + 1], row[x * 4], row[(x * 4) + 3]);
+                        qoiImage.Pixels[(y * width) + x] = pixel;
+                    }
+                }
+            }
+
+            bitmap.UnlockBits(bmpData);
+            bitmap.Dispose();
+            return qoiImage;
+        }
     }
 }
