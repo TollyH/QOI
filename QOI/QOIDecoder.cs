@@ -49,14 +49,27 @@ namespace QOI
                 throw new ArgumentException($"Colorspace ID is invalid. Expected 0 or 1, got {colorspace}");
             }
 
-            byte[] trailingData = Array.Empty<byte>();
             QOIImage image = new(width, height, (ChannelType)channels, (ColorspaceType)colorspace)
             {
                 Pixels = DebugMode
-                    ? GenerateDebugPixels(data[14..], width * height)
-                    : DecodePixels(data[14..], width * height, out trailingData),
-                TrailingData = trailingData
+                    ? GenerateDebugPixels(data[14..], width * height, out byte[] trailingData)
+                    : DecodePixels(data[14..], width * height, out trailingData)
             };
+
+            if (trailingData.Length < 8 || !trailingData[..8].SequenceEqual(EndMarker))
+            {
+                EndTagWasPresent = false;
+                if (RequireEndTag)
+                {
+                    throw new ArgumentException("End tag was missing from data stream.");
+                }
+            }
+            else
+            {
+                EndTagWasPresent = true;
+                trailingData = trailingData[8..];
+            }
+            image.TrailingData = trailingData;
 
             return image;
         }
@@ -65,12 +78,11 @@ namespace QOI
         /// Decode a QOI image data stream into an array of RGBA pixels.
         /// </summary>
         /// <param name="data">
-        /// The data from the QOI file. The file header must not be included, but the end marker must be included,
-        /// unless <see cref="RequireEndTag"/> is <see langword="false"/>.
+        /// The data from the QOI file. The file header must not be included.
         /// </param>
         /// <param name="trailingData">
         /// A byte array of any extra data appended on to the end of the QOI data stream.
-        /// Will be an empty array if there is none.
+        /// Contains the end marker if present.
         /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
         public Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
@@ -140,20 +152,6 @@ namespace QOI
                 previousPixel = decodedPixels[pixelIndex];
             }
 
-            if (dataIndex + 8 > data.Length || !data[dataIndex..(dataIndex + 8)].SequenceEqual(EndMarker))
-            {
-                EndTagWasPresent = false;
-                if (RequireEndTag)
-                {
-                    throw new ArgumentException("End tag was missing from data stream.");
-                }
-            }
-            else
-            {
-                EndTagWasPresent = true;
-                dataIndex += 8;
-            }
-
             trailingData = data[dataIndex..].ToArray();
             return decodedPixels;
         }
@@ -207,8 +205,12 @@ namespace QOI
         /// <param name="data">
         /// The data from the QOI file. The file header must not be included.
         /// </param>
+        /// <param name="trailingData">
+        /// A byte array of any extra data appended on to the end of the QOI data stream.
+        /// Contains the end marker if present.
+        /// </param>
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
-        public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount)
+        public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
         {
             Pixel[] generatedPixels = new Pixel[pixelCount];
 
@@ -254,7 +256,20 @@ namespace QOI
                 }
             }
 
+            trailingData = data[dataIndex..].ToArray();
             return generatedPixels;
+        }
+
+        /// <summary>
+        /// Generate an image where each pixel value is based on the chunk type used to encode it, instead of it's actual color value.
+        /// </summary>
+        /// <param name="data">
+        /// The data from the QOI file. The file header must not be included.
+        /// </param>
+        /// <returns>An array of <see cref="Pixel"/> instances.</returns>
+        public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount)
+        {
+            return GenerateDebugPixels(data, pixelCount, out _);
         }
     }
 }
