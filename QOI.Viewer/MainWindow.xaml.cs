@@ -1,5 +1,7 @@
 ﻿using Microsoft.Win32;
+using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -15,6 +17,15 @@ namespace QOI.Viewer
         public MainWindow()
         {
             InitializeComponent();
+
+            string[] args = Environment.GetCommandLineArgs();
+
+            configDebugMode.IsChecked = args.Contains("--debug");
+
+            if (args.Length > 1)
+            {
+                LoadImage(args[1]);
+            }
         }
 
         public void LoadImage(string path)
@@ -116,6 +127,24 @@ namespace QOI.Viewer
             if (File.Exists(openFile))
             {
                 LoadImage(openFile);
+            }
+        }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                LoadImage(files[0]);
+            }
+        }
+
+        private void imageView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                DataObject dObj = new(DataFormats.FileDrop, new string[1] { openFile });
+                _ = DragDrop.DoDragDrop(imageView, dObj, DragDropEffects.Copy);
             }
         }
     }

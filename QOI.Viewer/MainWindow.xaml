@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QOI.Viewer"
         mc:Ignorable="d"
-        Title="QOI Image Viewer" Height="450" Width="800">
+        Title="QOI Image Viewer" Height="450" Width="800" Drop="Window_Drop" AllowDrop="True">
     <Grid>
         <Menu VerticalAlignment="Top">
             <MenuItem Header="File">
@@ -16,6 +16,6 @@
                 <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>
             </MenuItem>
         </Menu>
-        <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
     </Grid>
 </Window>
