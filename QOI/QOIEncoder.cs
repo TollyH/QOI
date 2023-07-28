@@ -73,12 +73,12 @@ namespace QOI
                 // These six variables are left un-computed until needed for performance
                 byte hash = 0;
                 // Used for DIFF chunk
-                int dr = 0;
-                int dg = 0;
-                int db = 0;
+                sbyte dr = 0;
+                sbyte dg = 0;
+                sbyte db = 0;
                 // Used for LUMA chunk
-                int drDg = 0;
-                int dbDg = 0;
+                sbyte drDg = 0;
+                sbyte dbDg = 0;
 
                 ChunkType typeToEncode;
 
@@ -106,15 +106,15 @@ namespace QOI
                 }
                 // dg is defined first so it can be used for the LUMA check if this fails
                 // without having to re-compute
-                else if ((dg = pixel.Green - previousPixel.Green) is >= -2 and <= 1
-                    && (dr = pixel.Red - previousPixel.Red) is >= -2 and <= 1
-                    && (db = pixel.Blue - previousPixel.Blue) is >= -2 and <= 1)
+                else if ((dg = (sbyte)(pixel.Green - previousPixel.Green)) is >= -2 and <= 1
+                    && (dr = (sbyte)(pixel.Red - previousPixel.Red)) is >= -2 and <= 1
+                    && (db = (sbyte)(pixel.Blue - previousPixel.Blue)) is >= -2 and <= 1)
                 {
                     typeToEncode = ChunkType.QOI_OP_DIFF;
                 }
                 else if (dg is >= -32 and <= 31
-                    && (drDg = (pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green)) is >= -8 and <= 7
-                    && (dbDg = (pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green)) is >= -8 and <= 7)
+                    && (drDg = (sbyte)((pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green))) is >= -8 and <= 7
+                    && (dbDg = (sbyte)((pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green))) is >= -8 and <= 7)
                 {
                     typeToEncode = ChunkType.QOI_OP_LUMA;
                 }
