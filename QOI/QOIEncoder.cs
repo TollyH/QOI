@@ -83,7 +83,8 @@ namespace QOI
                 ChunkType typeToEncode;
 
                 int runLength = 0;
-                while (previousPixel == pixels[pixelIndex + runLength] && runLength < 62)
+                while (runLength < 62 && pixelIndex + runLength < pixels.Count
+                    && previousPixel == pixels[pixelIndex + runLength])
                 {
                     runLength++;
                 }
