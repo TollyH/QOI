@@ -10,7 +10,7 @@
         <Menu VerticalAlignment="Top">
             <MenuItem Header="File">
                 <MenuItem Header="Open" Click="OpenItem_Click"/>
-                <MenuItem Header="Save As PNG" Click="SaveItem_Click"/>
+                <MenuItem Header="Save as" Click="SaveItem_Click"/>
             </MenuItem>
             <MenuItem Header="Config">
                 <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>

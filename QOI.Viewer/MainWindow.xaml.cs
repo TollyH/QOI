@@ -78,6 +78,55 @@ namespace QOI.Viewer
             openFile = path;
         }
 
+        public void SaveImage(string path)
+        {
+            string extension = path.Split('.')[^1].ToLower();
+
+            try
+            {
+                switch (extension)
+                {
+                    case "qoi":
+                        {
+                            QOIEncoder encoder = new();
+                            encoder.SaveImageFile(path, ((BitmapImage)imageView.Source).ConvertToQOIImage());
+                            break;
+                        }
+                    case "png":
+                        {
+                            PngBitmapEncoder encoder = new();
+                            encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
+                            using FileStream fileStream = new(path, FileMode.Create);
+                            encoder.Save(fileStream);
+                            break;
+                        }
+                    case "jpg":
+                    case "jpeg":
+                        {
+                            JpegBitmapEncoder encoder = new();
+                            encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
+                            using FileStream fileStream = new(path, FileMode.Create);
+                            encoder.Save(fileStream);
+                            break;
+                        }
+                    default:
+                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                }
+            }
+            catch
+            {
+#if DEBUG
+                throw;
+#else
+                _ = MessageBox.Show("Failed to save image. You may not have permission to save to the given path.",
+                "Image Save Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+#endif
+            }
+        }
+
         private void OpenItem_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog fileDialog = new()
@@ -107,9 +156,11 @@ namespace QOI.Viewer
             SaveFileDialog fileDialog = new()
             {
                 CheckPathExists = true,
-                DefaultExt = ".png",
-                Filter = "PNG Image File|*.png",
-                AddExtension = true
+                DefaultExt = ".qoi",
+                AddExtension = true,
+                Filter = "QOI Image File|*.qoi" +
+                "|PNG Image File|*.png" +
+                "|JPEG Image File|*.jpg;*.jpeg"
             };
 
             if (!fileDialog.ShowDialog() ?? true)
@@ -117,10 +168,7 @@ namespace QOI.Viewer
                 return;
             }
 
-            PngBitmapEncoder encoder = new();
-            encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
-            using FileStream fileStream = new(fileDialog.FileName, FileMode.Create);
-            encoder.Save(fileStream);
+            SaveImage(fileDialog.FileName);
         }
 
         private void configDebugMode_Click(object sender, RoutedEventArgs e)
