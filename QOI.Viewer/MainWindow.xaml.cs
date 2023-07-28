@@ -13,7 +13,16 @@ namespace QOI.Viewer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string openFile = "";
+        private string _openFile = "";
+        private string openFile
+        {
+            get => _openFile;
+            set
+            {
+                _openFile = value;
+                Title = "QOI Image Viewer - " + value;
+            }
+        }
 
         public MainWindow()
         {
@@ -125,6 +134,8 @@ namespace QOI.Viewer
                 return;
 #endif
             }
+
+            openFile = path;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
