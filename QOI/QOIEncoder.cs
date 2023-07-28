@@ -113,8 +113,8 @@ namespace QOI
                     typeToEncode = ChunkType.QOI_OP_DIFF;
                 }
                 else if (dg is >= -32 and <= 31
-                    && (drDg = (pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7
-                    && (dbDg = (pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7)
+                    && (drDg = (pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green)) is >= -8 and <= 7
+                    && (dbDg = (pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green)) is >= -8 and <= 7)
                 {
                     typeToEncode = ChunkType.QOI_OP_LUMA;
                 }
