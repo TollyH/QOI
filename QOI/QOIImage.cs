@@ -78,8 +78,8 @@
 
         public uint Width { get; private set; }
         public uint Height { get; private set; }
-        public ChannelType Channels { get; private set; }
-        public ColorspaceType Colorspace { get; private set; }
+        public ChannelType Channels { get; set; }
+        public ColorspaceType Colorspace { get; set; }
 
         private Pixel[] _pixels;
         public Pixel[] Pixels

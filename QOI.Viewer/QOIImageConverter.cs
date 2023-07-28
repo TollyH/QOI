@@ -66,6 +66,7 @@ namespace QOI.Viewer
 
             BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
 
+            bool hasAlpha = false;
             // Copy pixel array to new QOIImage object
             unsafe
             {
@@ -76,9 +77,14 @@ namespace QOI.Viewer
                     {
                         Pixel pixel = new(row[(x * 4) + 2], row[(x * 4) + 1], row[x * 4], row[(x * 4) + 3]);
                         qoiImage.Pixels[(y * width) + x] = pixel;
+                        if (pixel.Alpha != 255)
+                        {
+                            hasAlpha = true;
+                        }
                     }
                 }
             }
+            qoiImage.Channels = hasAlpha ? ChannelType.RGBA : ChannelType.RGB;
 
             bitmap.UnlockBits(bmpData);
             bitmap.Dispose();
