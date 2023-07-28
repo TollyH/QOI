@@ -160,5 +160,32 @@ namespace QOI
 
             return dataIndex;
         }
+
+        /// <summary>
+        /// Encode and save a QOI image file.
+        /// </summary>
+        /// <param name="path">The path to save the encoded image file.</param>
+        public void SaveImageFile(string path, QOIImage image)
+        {
+            File.WriteAllBytes(path, Encode(image));
+        }
+
+        /// <summary>
+        /// Encode and save a QOI image file.
+        /// </summary>
+        /// <param name="uri">A URI pointing to where to save the encoded image file.</param>
+        public void SaveImageFile(Uri uri, QOIImage image)
+        {
+            File.WriteAllBytes(uri.AbsolutePath, Encode(image));
+        }
+
+        /// <summary>
+        /// Encode and save a QOI image file.
+        /// </summary>
+        /// <param name="file">The file info instance representing where to store the encoded image file.</param>
+        public void SaveImageFile(FileInfo file, QOIImage image)
+        {
+            File.WriteAllBytes(file.FullName, Encode(image));
+        }
     }
 }
