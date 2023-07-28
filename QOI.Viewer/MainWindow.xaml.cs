@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace QOI.Viewer
@@ -55,7 +56,7 @@ namespace QOI.Viewer
                     case "png":
                     case "jpg":
                     case "jpeg":
-                        imageView.Source = new BitmapImage(new System.Uri(path));
+                        imageView.Source = new BitmapImage(new Uri(path));
                         break;
                     default:
                         _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
@@ -139,9 +140,9 @@ namespace QOI.Viewer
             }
         }
 
-        private void imageView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private void imageView_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
                 DataObject dObj = new(DataFormats.FileDrop, new string[1] { openFile });
                 _ = DragDrop.DoDragDrop(imageView, dObj, DragDropEffects.Copy);
