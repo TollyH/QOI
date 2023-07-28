@@ -45,6 +45,9 @@
 
     public class QOIImage
     {
+        public static readonly byte[] MagicBytes = new byte[4] { 113, 111, 105, 102 };  // 'qoif'
+        public static readonly byte[] EndMarker = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 1 };
+
         public uint Width { get; private set; }
         public uint Height { get; private set; }
         public ChannelType Channels { get; private set; }

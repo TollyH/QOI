@@ -4,9 +4,6 @@ namespace QOI
 {
     public class QOIDecoder
     {
-        public static readonly byte[] MagicBytes = new byte[4] { 113, 111, 105, 102 };  // 'qoif'
-        public static readonly byte[] EndMarker = new byte[8] { 0, 0, 0, 0, 0, 0, 0, 1 };
-
         /// <summary>
         /// <see langword="true"/> by default to throw an <see cref="ArgumentException"/> if the end tag is missing from a decoded image
         /// </summary>
@@ -30,7 +27,7 @@ namespace QOI
         /// <returns>A fully decoded <see cref="QOIImage"/> instance.</returns>
         public QOIImage Decode(Span<byte> data)
         {
-            if (!data[..4].SequenceEqual(MagicBytes))
+            if (!data[..4].SequenceEqual(QOIImage.MagicBytes))
             {
                 throw new ArgumentException("Given bytes do not start with the correct header");
             }
@@ -56,7 +53,7 @@ namespace QOI
                     : DecodePixels(data[14..], width * height, out trailingData)
             };
 
-            if (trailingData.Length < 8 || !trailingData[..8].SequenceEqual(EndMarker))
+            if (trailingData.Length < 8 || !trailingData[..8].SequenceEqual(QOIImage.EndMarker))
             {
                 EndTagWasPresent = false;
                 if (RequireEndTag)
