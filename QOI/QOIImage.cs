@@ -22,7 +22,7 @@
         QOI_OP_RUN = 0b11
     }
 
-    public struct Pixel
+    public struct Pixel : IEquatable<Pixel>
     {
         public byte Red;
         public byte Green;
@@ -40,6 +40,34 @@
         public readonly byte ColorHash()
         {
             return (byte)(((Red * 3) + (Green * 5) + (Blue * 7) + (Alpha * 11)) % 64);
+        }
+
+        public override readonly bool Equals(object? obj)
+        {
+            return obj is Pixel pixel && Equals(pixel);
+        }
+
+        public readonly bool Equals(Pixel other)
+        {
+            return Red == other.Red &&
+                   Green == other.Green &&
+                   Blue == other.Blue &&
+                   Alpha == other.Alpha;
+        }
+
+        public override readonly int GetHashCode()
+        {
+            return HashCode.Combine(Red, Green, Blue, Alpha);
+        }
+
+        public static bool operator ==(Pixel left, Pixel right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Pixel left, Pixel right)
+        {
+            return !(left == right);
         }
     }
 
