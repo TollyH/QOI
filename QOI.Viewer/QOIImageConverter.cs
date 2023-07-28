@@ -35,7 +35,9 @@ namespace QOI.Viewer
 
             // Convert Bitmap to BitmapImage for use with WPF
             using MemoryStream stream = new();
-            bitmap.Save(stream, ImageFormat.Png);
+            // If the image has transparency, we have to use PNG at the cost of performance,
+            // as BMP doesn't support transparency in GDI+.
+            bitmap.Save(stream, image.Channels == ChannelType.RGBA ? ImageFormat.Png : ImageFormat.Bmp);
 
             BitmapImage bitmapImage = new();
             bitmapImage.BeginInit();
