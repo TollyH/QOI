@@ -103,7 +103,7 @@ namespace QOI
                         decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], data[++dataIndex]);
                         break;
                     default:
-                        switch ((ChunkType)(tagByte >> 6))
+                        switch ((ChunkType)(tagByte & 0b11000000))
                         {
                             case ChunkType.QOI_OP_INDEX:
                                 decodedPixels[pixelIndex] = colorArray[tagByte];
@@ -227,7 +227,7 @@ namespace QOI
                         dataIndex += 4;
                         break;
                     default:
-                        switch ((ChunkType)(tagByte >> 6))
+                        switch ((ChunkType)(tagByte & 0b11000000))
                         {
                             case ChunkType.QOI_OP_INDEX:
                                 generatedPixels[pixelIndex] = new Pixel(0, 0, 255);
