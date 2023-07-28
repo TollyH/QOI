@@ -16,12 +16,6 @@ namespace QOI
         public bool StripTrailingData { get; set; } = false;
 
         /// <summary>
-        /// If <see langword="true"/>, all pixel colors are replaced with ones representing what chunk type was used to encode each pixel.
-        /// </summary>
-        /// <remarks>Only affects Encode and EncodeImageFile methods, not EncodePixels</remarks>
-        public bool DebugMode { get; set; } = false;
-
-        /// <summary>
         /// Encode a QOI image to a complete byte stream.
         /// </summary>
         /// <param name="image">A <see cref="QOIImage"/> instance filled with all the data to encode.</param>
