@@ -70,11 +70,15 @@ namespace QOI
             {
                 colorArray[previousPixel.ColorHash()] = previousPixel;
                 Pixel pixel = pixels[pixelIndex];
-                // These three variables are left un-computed until needed for performance
+                // These six variables are left un-computed until needed for performance
                 byte hash = 0;
+                // Used for DIFF chunk
+                int dr = 0;
+                int dg = 0;
+                int db = 0;
                 // Used for LUMA chunk
-                int DrDg = 0;
-                int DbDg = 0;
+                int drDg = 0;
+                int dbDg = 0;
 
                 ChunkType typeToEncode;
 
@@ -99,15 +103,17 @@ namespace QOI
                     // so we can skip doing any other checks if it has
                     typeToEncode = ChunkType.QOI_OP_RGBA;
                 }
-                else if (pixel.Red - previousPixel.Red is >= -2 and <= 1
-                    && pixel.Green - previousPixel.Green is >= -2 and <= 1
-                    && pixel.Blue - previousPixel.Blue is >= -2 and <= 1)
+                // dg is defined first so it can be used for the LUMA check if this fails
+                // without having to re-compute
+                else if ((dg = pixel.Green - previousPixel.Green) is >= -2 and <= 1
+                    && (dr = pixel.Red - previousPixel.Red) is >= -2 and <= 1
+                    && (db = pixel.Blue - previousPixel.Blue) is >= -2 and <= 1)
                 {
                     typeToEncode = ChunkType.QOI_OP_DIFF;
                 }
-                else if (pixel.Green - previousPixel.Green is >= -32 and <= 31
-                    && (DrDg = (pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7
-                    && (DbDg = (pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7)
+                else if (dg is >= -32 and <= 31
+                    && (drDg = (pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7
+                    && (dbDg = (pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green)) is >= -8 and < 7)
                 {
                     typeToEncode = ChunkType.QOI_OP_LUMA;
                 }
@@ -120,16 +126,32 @@ namespace QOI
                 switch (typeToEncode)
                 {
                     case ChunkType.QOI_OP_RGB:
+                        destination[++dataIndex] = pixel.Red;
+                        destination[++dataIndex] = pixel.Green;
+                        destination[++dataIndex] = pixel.Blue;
                         break;
                     case ChunkType.QOI_OP_RGBA:
+                        destination[++dataIndex] = pixel.Red;
+                        destination[++dataIndex] = pixel.Green;
+                        destination[++dataIndex] = pixel.Blue;
+                        destination[++dataIndex] = pixel.Alpha;
                         break;
                     case ChunkType.QOI_OP_INDEX:
+                        destination[dataIndex] |= hash;
                         break;
                     case ChunkType.QOI_OP_DIFF:
+                        destination[dataIndex] |= (byte)((dr + 2) << 4);
+                        destination[dataIndex] |= (byte)((dg + 2) << 2);
+                        destination[dataIndex] |= (byte)(db + 2);
                         break;
                     case ChunkType.QOI_OP_LUMA:
+                        destination[dataIndex] |= (byte)(dg + 32);
+                        destination[++dataIndex] |= (byte)((drDg + 8) << 4);
+                        destination[dataIndex] |= (byte)(dbDg + 8);
                         break;
                     case ChunkType.QOI_OP_RUN:
+                        pixelIndex += runLength - 1;
+                        destination[dataIndex] |= (byte)(runLength - 1);
                         break;
                 }
 
