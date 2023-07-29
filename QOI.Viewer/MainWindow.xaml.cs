@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -27,6 +28,16 @@ namespace QOI.Viewer
         }
 
         private byte[] trailingData = Array.Empty<byte>();
+
+        private static readonly Dictionary<ChunkType, string> debugModeColors = new()
+        {
+            { ChunkType.QOI_OP_RGB, "Red" },
+            { ChunkType.QOI_OP_RGBA, "Green" },
+            { ChunkType.QOI_OP_INDEX, "Blue" },
+            { ChunkType.QOI_OP_DIFF, "Yellow" },
+            { ChunkType.QOI_OP_LUMA, "Magenta" },
+            { ChunkType.QOI_OP_RUN, "Cyan" }
+        };
 
         public MainWindow()
         {
@@ -77,7 +88,9 @@ namespace QOI.Viewer
                         statsLabelChunkStats.Text = "Chunk Counts:";
                         foreach ((ChunkType type, int count) in decoder.ChunksDecoded)
                         {
-                            statsLabelChunkStats.Text += $"{Environment.NewLine}{type}: {count:n0}";
+                            statsLabelChunkStats.Text += configDebugMode.IsChecked
+                                ? $"{Environment.NewLine}{type} ({debugModeColors[type]}): {count:n0}"
+                                : $"{Environment.NewLine}{type}: {count:n0}";
                         }
                         statsLabelChunkStats.Text += $"{Environment.NewLine}Total: {decoder.ChunksDecoded.Values.Sum():n0}";
 
