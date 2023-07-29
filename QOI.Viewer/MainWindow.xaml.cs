@@ -264,5 +264,10 @@ namespace QOI.Viewer
             RenderOptions.SetBitmapScalingMode(imageView, configNearestNeighbor.IsChecked
                 ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
         }
+
+        private void BulkConverterItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

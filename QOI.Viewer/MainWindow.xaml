@@ -19,6 +19,8 @@
             <MenuItem Header="File">
                 <MenuItem Header="Open" Click="OpenItem_Click"/>
                 <MenuItem Header="Save as" Click="SaveItem_Click"/>
+                <Separator/>
+                <MenuItem Header="Bulk converter..." Click="BulkConverterItem_Click"/>
             </MenuItem>
             <MenuItem Header="View">
                 <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
