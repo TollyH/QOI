@@ -5,17 +5,39 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QOI.Viewer"
         mc:Ignorable="d"
-        Title="QOI Image Viewer" Height="450" Width="800" Drop="Window_Drop" AllowDrop="True">
+        Title="QOI Image Viewer" Height="600" Width="1000" Drop="Window_Drop" AllowDrop="True">
     <Grid>
-        <Menu VerticalAlignment="Top">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="0" d:Width="200"/>
+        </Grid.ColumnDefinitions>
+        <Menu Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Top">
             <MenuItem Header="File">
                 <MenuItem Header="Open" Click="OpenItem_Click"/>
                 <MenuItem Header="Save as" Click="SaveItem_Click"/>
             </MenuItem>
-            <MenuItem Header="Config">
+            <MenuItem Header="View">
                 <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>
             </MenuItem>
         </Menu>
-        <Image x:Name="imageView" Margin="0,18,0,0" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
+        <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
+        <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8"/>
+        <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#FFF0F0F0">
+            <TextBlock x:Name="statsLabelResolution" Margin="5" Padding="5" FontSize="14" Text="Resolution:"/>
+            <TextBlock x:Name="statsLabelChannels" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Channels:"/>
+            <TextBlock x:Name="statsLabelColorspace" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Colorspace:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelTimeDecoding" Margin="5" Padding="5" FontSize="14" Text="Time to Decode:"/>
+            <TextBlock x:Name="statsLabelTimeConverting" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Time to Convert:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelCompression" Margin="5" Padding="5" FontSize="14" Text="Compression:"/>
+            <TextBlock x:Name="statsLabelTrailingData" Margin="5" Padding="5,0,5,5" FontSize="14" Text="Trailing Data Length:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelChunkStats" Margin="5" Padding="5" FontSize="14" Text="Chunk Counts:" LineHeight="10"/>
+        </StackPanel>
     </Grid>
 </Window>

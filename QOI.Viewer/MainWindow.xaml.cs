@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -23,6 +24,8 @@ namespace QOI.Viewer
                 Title = "QOI Image Viewer - " + value;
             }
         }
+
+        private byte[] trailingData = Array.Empty<byte>();
 
         public MainWindow()
         {
@@ -52,8 +55,30 @@ namespace QOI.Viewer
                             RequireEndTag = false,
                             DebugMode = configDebugMode.IsChecked
                         };
+                        Stopwatch decodeStopwatch = Stopwatch.StartNew();
                         QOIImage newQOIImage = decoder.DecodeImageFile(path);
+                        decodeStopwatch.Stop();
+                        Stopwatch convertStopwatch = Stopwatch.StartNew();
                         imageView.Source = newQOIImage.ConvertToBitmapImage();
+                        convertStopwatch.Stop();
+                        trailingData = newQOIImage.TrailingData;
+
+                        int uncompressedBytes = newQOIImage.Pixels.Length * 4;
+                        statsLabelResolution.Text = $"Resolution: {newQOIImage.Width} x {newQOIImage.Height} " +
+                            $"({newQOIImage.Pixels.Length:n0})";
+                        statsLabelChannels.Text = $"Channels: {newQOIImage.Channels}";
+                        statsLabelColorspace.Text = $"Colorspace: {newQOIImage.Colorspace}";
+                        statsLabelTimeDecoding.Text = $"Time to Decode: {decodeStopwatch.Elapsed.TotalSeconds:0.###}s";
+                        statsLabelTimeConverting.Text = $"Time to Convert: {convertStopwatch.Elapsed.TotalSeconds:0.###}s";
+                        statsLabelCompression.Text = $"Compression: {Utils.FormatBytes(decoder.PixelDataLength, 2)} " +
+                            $"/ {Utils.FormatBytes(uncompressedBytes, 2)} ({(double)decoder.PixelDataLength / uncompressedBytes * 100d:0.##}%)";
+                        statsLabelTrailingData.Text = $"Trailing Data Length: {newQOIImage.TrailingData.Length:n0} bytes";
+                        statsLabelChunkStats.Text = "Chunk Counts:";
+                        foreach ((ChunkType type, int count) in decoder.ChunksDecoded)
+                        {
+                            statsLabelChunkStats.Text += $"{Environment.NewLine}{type}: {count:n0}";
+                        }
+                        statsLabelChunkStats.Text += $"{Environment.NewLine}Total: {decoder.ChunksDecoded.Values.Sum():n0}";
 
                         if (!decoder.EndTagWasPresent)
                         {
@@ -66,6 +91,16 @@ namespace QOI.Viewer
                     case "jpg":
                     case "jpeg":
                         imageView.Source = new BitmapImage(new Uri(path));
+
+                        statsLabelResolution.Text = "Resolution: Stats for QOI images only";
+                        statsLabelChannels.Text = "Channels: Stats for QOI images only";
+                        statsLabelColorspace.Text = "Colorspace: Stats for QOI images only";
+                        statsLabelTimeDecoding.Text = "Time to Decode: Stats for QOI images only";
+                        statsLabelTimeConverting.Text = "Time to Convert: Stats for QOI images only";
+                        statsLabelCompression.Text = "Compression: Stats for QOI images only";
+                        statsLabelTrailingData.Text = "Trailing Data Length: Stats for QOI images only";
+                        statsLabelChunkStats.Text = "Chunk Counts: Stats for QOI images only";
+
                         break;
                     default:
                         _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
@@ -98,7 +133,9 @@ namespace QOI.Viewer
                     case "qoi":
                         {
                             QOIEncoder encoder = new();
-                            encoder.SaveImageFile(path, ((BitmapImage)imageView.Source).ConvertToQOIImage());
+                            QOIImage toSave = ((BitmapImage)imageView.Source).ConvertToQOIImage();
+                            toSave.TrailingData = trailingData;
+                            encoder.SaveImageFile(path, toSave);
                             break;
                         }
                     case "png":

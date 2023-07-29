@@ -21,6 +21,16 @@ namespace QOI
         public bool EndTagWasPresent { get; private set; } = true;
 
         /// <summary>
+        /// The number of each chunk type decoded in the last pixel decode operation.
+        /// </summary>
+        public Dictionary<ChunkType, int> ChunksDecoded { get; } = new();
+
+        /// <summary>
+        /// The number of bytes used to store all of the pixels in the last decoded image.
+        /// </summary>
+        public int PixelDataLength { get; private set; } = 0;
+
+        /// <summary>
         /// Decode a QOI image byte stream.
         /// </summary>
         /// <param name="data">A byte stream containing the entirety of a QOI file.</param>
@@ -84,6 +94,12 @@ namespace QOI
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
         public Pixel[] DecodePixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
         {
+            ChunksDecoded.Clear();
+            foreach (ChunkType type in Enum.GetValues<ChunkType>())
+            {
+                ChunksDecoded[type] = 0;
+            }
+
             Pixel[] decodedPixels = new Pixel[pixelCount];
             Pixel previousPixel = new(0, 0, 0, 255);
             Pixel[] colorArray = new Pixel[64];
@@ -98,15 +114,18 @@ namespace QOI
                 {
                     case ChunkType.QOI_OP_RGB:
                         decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], previousPixel.Alpha);
+                        ChunksDecoded[ChunkType.QOI_OP_RGB]++;
                         break;
                     case ChunkType.QOI_OP_RGBA:
                         decodedPixels[pixelIndex] = new Pixel(data[++dataIndex], data[++dataIndex], data[++dataIndex], data[++dataIndex]);
+                        ChunksDecoded[ChunkType.QOI_OP_RGBA]++;
                         break;
                     default:
                         switch ((ChunkType)(tagByte & 0b11000000))
                         {
                             case ChunkType.QOI_OP_INDEX:
                                 decodedPixels[pixelIndex] = colorArray[tagByte];
+                                ChunksDecoded[ChunkType.QOI_OP_INDEX]++;
                                 break;
                             case ChunkType.QOI_OP_DIFF:
                                 {
@@ -118,6 +137,7 @@ namespace QOI
                                             (byte)(previousPixel.Green + greenDiff),
                                             (byte)(previousPixel.Blue + blueDiff),
                                             previousPixel.Alpha);
+                                    ChunksDecoded[ChunkType.QOI_OP_DIFF]++;
                                     break;
                                 }
                             case ChunkType.QOI_OP_LUMA:
@@ -131,6 +151,7 @@ namespace QOI
                                             (byte)(previousPixel.Green + greenDiff),
                                             (byte)(previousPixel.Blue + blueDiff + greenDiff),
                                             previousPixel.Alpha);
+                                    ChunksDecoded[ChunkType.QOI_OP_LUMA]++;
                                     break;
                                 }
                             case ChunkType.QOI_OP_RUN:
@@ -141,6 +162,7 @@ namespace QOI
                                         decodedPixels[pixelIndex++] = previousPixel;
                                     }
                                     pixelIndex--;
+                                    ChunksDecoded[ChunkType.QOI_OP_RUN]++;
                                     break;
                                 }
                         }
@@ -149,6 +171,7 @@ namespace QOI
                 previousPixel = decodedPixels[pixelIndex];
             }
 
+            PixelDataLength = dataIndex;
             trailingData = data[dataIndex..].ToArray();
             return decodedPixels;
         }
@@ -209,6 +232,12 @@ namespace QOI
         /// <returns>An array of <see cref="Pixel"/> instances.</returns>
         public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount, out byte[] trailingData)
         {
+            ChunksDecoded.Clear();
+            foreach (ChunkType type in Enum.GetValues<ChunkType>())
+            {
+                ChunksDecoded[type] = 0;
+            }
+
             Pixel[] generatedPixels = new Pixel[pixelCount];
 
             int pixelIndex = 0;
@@ -220,10 +249,12 @@ namespace QOI
                 {
                     case ChunkType.QOI_OP_RGB:
                         generatedPixels[pixelIndex] = new Pixel(255, 0, 0);
+                        ChunksDecoded[ChunkType.QOI_OP_RGB]++;
                         dataIndex += 3;
                         break;
                     case ChunkType.QOI_OP_RGBA:
                         generatedPixels[pixelIndex] = new Pixel(0, 255, 0);
+                        ChunksDecoded[ChunkType.QOI_OP_RGBA]++;
                         dataIndex += 4;
                         break;
                     default:
@@ -231,12 +262,15 @@ namespace QOI
                         {
                             case ChunkType.QOI_OP_INDEX:
                                 generatedPixels[pixelIndex] = new Pixel(0, 0, 255);
+                                ChunksDecoded[ChunkType.QOI_OP_INDEX]++;
                                 break;
                             case ChunkType.QOI_OP_DIFF:
                                 generatedPixels[pixelIndex] = new Pixel(255, 255, 0);
+                                ChunksDecoded[ChunkType.QOI_OP_DIFF]++;
                                 break;
                             case ChunkType.QOI_OP_LUMA:
                                 generatedPixels[pixelIndex] = new Pixel(255, 0, 255);
+                                ChunksDecoded[ChunkType.QOI_OP_LUMA]++;
                                 dataIndex++;
                                 break;
                             case ChunkType.QOI_OP_RUN:
@@ -247,12 +281,14 @@ namespace QOI
                                     generatedPixels[pixelIndex++] = new Pixel(255, 255, 255);
                                 }
                                 pixelIndex--;
+                                ChunksDecoded[ChunkType.QOI_OP_RUN]++;
                                 break;
                         }
                         break;
                 }
             }
 
+            PixelDataLength = dataIndex;
             trailingData = data[dataIndex..].ToArray();
             return generatedPixels;
         }
