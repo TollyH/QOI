@@ -33,6 +33,18 @@ namespace QOI.Viewer
             }
         }
 
+        public static readonly DependencyProperty IsErrorProperty =
+            DependencyProperty.Register("IsError", typeof(bool), typeof(FileProgress));
+        public bool IsError
+        {
+            get => (bool)GetValue(IsErrorProperty);
+            set
+            {
+                finishedIndicator.Fill = value ? Brushes.Red : IsComplete ? Brushes.Green : null;
+                SetValue(IsErrorProperty, value);
+            }
+        }
+
         public FileProgress()
         {
             InitializeComponent();
