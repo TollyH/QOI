@@ -21,6 +21,8 @@
                 <MenuItem Header="Save as" Click="SaveItem_Click"/>
             </MenuItem>
             <MenuItem Header="View">
+                <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
+                <Separator/>
                 <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>
             </MenuItem>
         </Menu>

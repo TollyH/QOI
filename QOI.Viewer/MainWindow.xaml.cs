@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace QOI.Viewer
@@ -243,6 +244,12 @@ namespace QOI.Viewer
                 DataObject dObj = new(DataFormats.FileDrop, new string[1] { openFile });
                 _ = DragDrop.DoDragDrop(imageView, dObj, DragDropEffects.Copy);
             }
+        }
+
+        private void configNearestNeighbor_Click(object sender, RoutedEventArgs e)
+        {
+            RenderOptions.SetBitmapScalingMode(imageView, configNearestNeighbor.IsChecked
+                ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
         }
     }
 }
