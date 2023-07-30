@@ -108,7 +108,6 @@ namespace QOI
             int dataIndex = 0;
             for (; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
             {
-                colorArray[previousPixel.ColorHash()] = previousPixel;
                 byte tagByte = data[dataIndex];
                 switch ((ChunkType)tagByte)
                 {
@@ -169,6 +168,7 @@ namespace QOI
                         break;
                 }
                 previousPixel = decodedPixels[pixelIndex];
+                colorArray[previousPixel.ColorHash()] = previousPixel;
             }
 
             PixelDataLength = dataIndex;

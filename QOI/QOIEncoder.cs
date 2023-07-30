@@ -68,7 +68,6 @@ namespace QOI
             int dataIndex = 0;
             for (; pixelIndex < pixels.Count && dataIndex < destination.Length; pixelIndex++, dataIndex++)
             {
-                colorArray[previousPixel.ColorHash()] = previousPixel;
                 Pixel pixel = pixels[pixelIndex];
                 // These six variables are left un-computed until needed for performance
                 byte hash = 0;
@@ -157,6 +156,7 @@ namespace QOI
                 }
 
                 previousPixel = pixels[pixelIndex];
+                colorArray[previousPixel.ColorHash()] = previousPixel;
             }
 
             return dataIndex;
