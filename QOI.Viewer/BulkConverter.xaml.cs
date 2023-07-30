@@ -29,6 +29,11 @@ namespace QOI.Viewer
         {
             foreach (string file in files)
             {
+                if (Path.GetExtension(file).ToLower() is not ".qoi" and not ".png"
+                    and not ".jpg" and not ".jpeg")
+                {
+                    continue;
+                }
                 if (!File.Exists(file))
                 {
                     continue;
@@ -95,6 +100,7 @@ namespace QOI.Viewer
             string targetType = (formatSelector.SelectedItem as ComboBoxItem)?.Tag as string ?? "qoi";
 
             selectFilesButton.IsEnabled = false;
+            selectFoldersButton.IsEnabled = false;
             clearFilesButton.IsEnabled = false;
             setDestinationButton.IsEnabled = false;
             convertButton.IsEnabled = false;
@@ -180,6 +186,7 @@ namespace QOI.Viewer
 
             converting = false;
             selectFilesButton.IsEnabled = true;
+            selectFoldersButton.IsEnabled = true;
             clearFilesButton.IsEnabled = true;
             setDestinationButton.IsEnabled = true;
             convertButton.IsEnabled = true;
@@ -199,6 +206,27 @@ namespace QOI.Viewer
         {
             filesToConvert.Clear();
             filesPanel.Children.Clear();
+        }
+
+        private void selectFoldersButton_Click(object sender, RoutedEventArgs e)
+        {
+            CommonOpenFileDialog folderDialog = new()
+            {
+                IsFolderPicker = true,
+                EnsurePathExists = true,
+                Multiselect = true
+            };
+
+            if (folderDialog.ShowDialog() != CommonFileDialogResult.Ok)
+            {
+                return;
+            }
+
+            if(!Directory.Exists(folderDialog.FileName))
+            {
+                return;
+            }
+            AddFiles(Directory.GetFiles(folderDialog.FileName, "*", SearchOption.AllDirectories));
         }
     }
 }
