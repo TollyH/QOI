@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QOI.Viewer"
         xmlns:qoi="clr-namespace:QOI;assembly=QOI"
         mc:Ignorable="d"
-        Title="QOI Image Viewer" Height="600" Width="1000" Drop="Window_Drop" AllowDrop="True">
+        Title="QOI Image Viewer" Height="600" Width="1000" Drop="Window_Drop" AllowDrop="True" KeyDown="Window_KeyDown">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -46,7 +46,7 @@
             </MenuItem>
         </Menu>
         <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
-        <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8"/>
+        <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8" Focusable="False"/>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#FFF0F0F0">
             <TextBlock x:Name="statsLabelResolution" Margin="5" Padding="5" FontSize="14" Text="Resolution:"/>
             <TextBlock x:Name="statsLabelChannels" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Channels:"/>

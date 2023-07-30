@@ -24,9 +24,13 @@ namespace QOI.Viewer
             set
             {
                 _openFile = value;
-                Title = "QOI Image Viewer - " + value;
+                Title = $"QOI Image Viewer - ({indexInFolder + 1}/{filesInFolder.Length}) {value}";
             }
         }
+
+        private string lastOpenedFolder = "";
+        private string[] filesInFolder = Array.Empty<string>();
+        private int indexInFolder = 0;
 
         private byte[] trailingData = Array.Empty<byte>();
 
@@ -152,7 +156,16 @@ namespace QOI.Viewer
 #endif
             }
 
-            openFile = path;
+            string fullPath = Path.GetFullPath(path);
+            string newFolder = Path.GetDirectoryName(fullPath) ?? "";
+            if (lastOpenedFolder != newFolder)
+            {
+                lastOpenedFolder = newFolder;
+                filesInFolder = Directory.GetFiles(newFolder).Where(
+                    x => Path.GetExtension(x).ToLower() is ".qoi" or ".png" or ".jpg" or ".jpeg").ToArray();
+                indexInFolder = Array.IndexOf(filesInFolder, fullPath);
+            }
+            openFile = fullPath;
         }
 
         public void SaveImage(string path)
@@ -292,6 +305,27 @@ namespace QOI.Viewer
         private void BulkConverterItem_Click(object sender, RoutedEventArgs e)
         {
             _ = new BulkConverter().ShowDialog();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.Left:
+                    if (indexInFolder <= 0)
+                    {
+                        break;
+                    }
+                    LoadImage(filesInFolder[--indexInFolder]);
+                    break;
+                case Key.Right:
+                    if (indexInFolder >= filesInFolder.Length - 1)
+                    {
+                        break;
+                    }
+                    LoadImage(filesInFolder[++indexInFolder]);
+                    break;
+            }
         }
     }
 }
