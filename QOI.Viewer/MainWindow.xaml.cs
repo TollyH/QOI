@@ -267,7 +267,7 @@ namespace QOI.Viewer
 
         private void BulkConverterItem_Click(object sender, RoutedEventArgs e)
         {
-
+            new BulkConverter().Show();
         }
     }
 }
