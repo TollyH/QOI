@@ -26,7 +26,7 @@
             <MenuItem Header="View">
                 <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
                 <Separator/>
-                <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="ReloadOnClick"/>
+                <MenuItem x:Name="configDebugMode" Header="Debug Mode (Color chunk types)" IsCheckable="True" Click="ReloadOnClick"/>
                 <Separator/>
                 <MenuItem x:Name="chunkHideMenu" Header="Hide Chunk Types">
                     <MenuItem x:Name="configChunkHideRGB" Header="Hide RGB Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGB}"/>
