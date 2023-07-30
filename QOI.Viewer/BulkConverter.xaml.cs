@@ -234,11 +234,14 @@ namespace QOI.Viewer
                 return;
             }
 
-            if(!Directory.Exists(folderDialog.FileName))
+            foreach (string folder in folderDialog.FileNames)
             {
-                return;
+                if (!Directory.Exists(folder))
+                {
+                    continue;
+                }
+                AddFiles(Directory.GetFiles(folder, "*", SearchOption.AllDirectories));
             }
-            AddFiles(Directory.GetFiles(folderDialog.FileName, "*", SearchOption.AllDirectories));
         }
     }
 }
