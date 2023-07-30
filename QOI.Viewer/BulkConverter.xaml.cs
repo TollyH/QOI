@@ -217,7 +217,7 @@ namespace QOI.Viewer
             filesPanel.Children.Clear();
             progressLabel.Text = $"0/0";
             conversionProgress.Value = 0;
-            conversionProgress.Maximum = 0;
+            conversionProgress.Maximum = 1;
         }
 
         private void selectFoldersButton_Click(object sender, RoutedEventArgs e)
