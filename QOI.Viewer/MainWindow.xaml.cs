@@ -46,10 +46,17 @@ namespace QOI.Viewer
             string[] args = Environment.GetCommandLineArgs();
 
             configDebugMode.IsChecked = args.Contains("--debug");
+            args = args.Skip(1).Where(x => !x.StartsWith("-")).ToArray();
 
-            if (args.Length > 1)
+            if (args.Length == 1)
             {
-                LoadImage(args[1]);
+                LoadImage(args[0]);
+            }
+            else if (args.Length > 1)
+            {
+                BulkConverter converter = new();
+                converter.AddFiles(args);
+                _ = converter.ShowDialog();
             }
         }
 
@@ -267,7 +274,7 @@ namespace QOI.Viewer
 
         private void BulkConverterItem_Click(object sender, RoutedEventArgs e)
         {
-            new BulkConverter().Show();
+            _ = new BulkConverter().ShowDialog();
         }
     }
 }
