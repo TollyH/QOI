@@ -42,8 +42,11 @@ namespace QOI.Viewer
                 _ = filesPanel.Children.Add(new FileProgress()
                 {
                     Filename = Path.GetFileName(file),
-                    IsComplete = false
+                    CurrentState = FileProgress.State.None
                 });
+                progressLabel.Text = $"0/{filesToConvert.Count}";
+                conversionProgress.Maximum = filesToConvert.Count;
+                conversionProgress.Value = 0;
             }
         }
 
@@ -130,6 +133,7 @@ namespace QOI.Viewer
                 {
                     try
                     {
+                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Processing);
                         string destinationFile = Path.Join(destination,
                             Path.ChangeExtension(Path.GetFileName(thisFile), targetType));
                         BitmapImage source = Path.GetExtension(thisFile).ToLower() == ".qoi"
@@ -160,17 +164,22 @@ namespace QOI.Viewer
                                     break;
                                 }
                         }
-                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).IsComplete = true);
+                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Complete);
                     }
                     catch
                     {
-                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).IsError = true);
+                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Error);
                         anyErrors = true;
                     }
                     finally
                     {
                         aliveThreads--;
                         complete++;
+                        Dispatcher.Invoke(() =>
+                        {
+                            progressLabel.Text = $"{complete}/{filesToConvert.Count}";
+                            conversionProgress.Value = complete;
+                        });
                     }
                 });
                 thread.Start();
@@ -206,6 +215,9 @@ namespace QOI.Viewer
         {
             filesToConvert.Clear();
             filesPanel.Children.Clear();
+            progressLabel.Text = $"0/0";
+            conversionProgress.Value = 0;
+            conversionProgress.Maximum = 0;
         }
 
         private void selectFoldersButton_Click(object sender, RoutedEventArgs e)

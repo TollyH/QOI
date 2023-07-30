@@ -15,7 +15,9 @@
             <ComboBoxItem Content="PNG" Tag="png"/>
             <ComboBoxItem Content="JPEG" Tag="jpg"/>
         </ComboBox>
-        <Border Margin="10,45,10,45" BorderBrush="#FFA7A7A7" BorderThickness="1">
+        <TextBlock x:Name="progressLabel" VerticalAlignment="Top" Margin="10,35,0,0" Text="0/0" Padding="0" HorizontalAlignment="Left" FontSize="14"/>
+        <ProgressBar x:Name="conversionProgress" VerticalAlignment="Top" Margin="10,55,10,0" Height="15"/>
+        <Border Margin="10,80,10,45" BorderBrush="#FFA7A7A7" BorderThickness="1">
             <ScrollViewer>
                 <StackPanel x:Name="filesPanel"/>
             </ScrollViewer>
