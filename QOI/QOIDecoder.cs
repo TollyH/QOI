@@ -30,6 +30,16 @@ namespace QOI
         /// </summary>
         public int PixelDataLength { get; private set; } = 0;
 
+        public readonly Dictionary<ChunkType, Pixel> DebugModeColors = new()
+        {
+            { ChunkType.QOI_OP_RGB, new Pixel(255, 0, 0) },
+            { ChunkType.QOI_OP_RGBA, new Pixel(0, 255, 0) },
+            { ChunkType.QOI_OP_INDEX, new Pixel(0, 0, 255) },
+            { ChunkType.QOI_OP_DIFF, new Pixel(255, 255, 0) },
+            { ChunkType.QOI_OP_LUMA, new Pixel(255, 0, 255) },
+            { ChunkType.QOI_OP_RUN, new Pixel(0, 255, 255) },
+        };
+
         /// <summary>
         /// Decode a QOI image byte stream.
         /// </summary>
@@ -248,12 +258,12 @@ namespace QOI
                 switch ((ChunkType)tagByte)
                 {
                     case ChunkType.QOI_OP_RGB:
-                        generatedPixels[pixelIndex] = new Pixel(255, 0, 0);
+                        generatedPixels[pixelIndex] = DebugModeColors[ChunkType.QOI_OP_RGB];
                         ChunksDecoded[ChunkType.QOI_OP_RGB]++;
                         dataIndex += 3;
                         break;
                     case ChunkType.QOI_OP_RGBA:
-                        generatedPixels[pixelIndex] = new Pixel(0, 255, 0);
+                        generatedPixels[pixelIndex] = DebugModeColors[ChunkType.QOI_OP_RGBA];
                         ChunksDecoded[ChunkType.QOI_OP_RGBA]++;
                         dataIndex += 4;
                         break;
@@ -261,21 +271,21 @@ namespace QOI
                         switch ((ChunkType)(tagByte & 0b11000000))
                         {
                             case ChunkType.QOI_OP_INDEX:
-                                generatedPixels[pixelIndex] = new Pixel(0, 0, 255);
+                                generatedPixels[pixelIndex] = DebugModeColors[ChunkType.QOI_OP_INDEX];
                                 ChunksDecoded[ChunkType.QOI_OP_INDEX]++;
                                 break;
                             case ChunkType.QOI_OP_DIFF:
-                                generatedPixels[pixelIndex] = new Pixel(255, 255, 0);
+                                generatedPixels[pixelIndex] = DebugModeColors[ChunkType.QOI_OP_DIFF];
                                 ChunksDecoded[ChunkType.QOI_OP_DIFF]++;
                                 break;
                             case ChunkType.QOI_OP_LUMA:
-                                generatedPixels[pixelIndex] = new Pixel(255, 0, 255);
+                                generatedPixels[pixelIndex] = DebugModeColors[ChunkType.QOI_OP_LUMA];
                                 ChunksDecoded[ChunkType.QOI_OP_LUMA]++;
                                 dataIndex++;
                                 break;
                             case ChunkType.QOI_OP_RUN:
                                 int runLength = (0b00111111 & tagByte) + 1;
-                                generatedPixels[pixelIndex++] = new Pixel(0, 255, 255);
+                                generatedPixels[pixelIndex++] = DebugModeColors[ChunkType.QOI_OP_RUN];
                                 for (int i = 1; i < runLength; i++)
                                 {
                                     generatedPixels[pixelIndex++] = new Pixel(255, 255, 255);
