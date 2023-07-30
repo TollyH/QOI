@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QOI.Viewer"
         mc:Ignorable="d"
-        Title="Bulk QOI Converter" Height="350" Width="500">
+        Title="Bulk QOI Converter" Height="350" Width="500" AllowDrop="True" Drop="Window_Drop">
     <Grid>
         <Button x:Name="selectFilesButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Content="Select Files" Padding="5,1,5,1" Click="selectFilesButton_Click"/>
         <ComboBox x:Name="formatSelector" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10" SelectedIndex="0">

@@ -175,5 +175,14 @@ namespace QOI.Viewer
             outputLabel.FontWeight = FontWeights.Bold;
             converting = false;
         }
+
+        private void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                AddFiles(files);
+            }
+        }
     }
 }
