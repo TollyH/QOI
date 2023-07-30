@@ -15,6 +15,12 @@ namespace QOI
         /// </summary>
         public bool StripTrailingData { get; set; } = false;
 
+        public bool UseINDEXChunks { get; set; } = true;
+        public bool UseDIFFChunks { get; set; } = true;
+        public bool UseLUMAChunks { get; set; } = true;
+        public bool UseRUNChunks { get; set; } = true;
+        public bool UseRGBChunks { get; set; } = true;
+
         /// <summary>
         /// Encode a QOI image to a complete byte stream.
         /// </summary>
@@ -82,7 +88,7 @@ namespace QOI
                 ChunkType typeToEncode;
 
                 int runLength = 0;
-                while (runLength < 62 && pixelIndex + runLength < pixels.Count
+                while (UseRUNChunks && runLength < 62 && pixelIndex + runLength < pixels.Count
                     && previousPixel == pixels[pixelIndex + runLength])
                 {
                     runLength++;
@@ -92,7 +98,7 @@ namespace QOI
                 {
                     typeToEncode = ChunkType.QOI_OP_RUN;
                 }
-                else if (colorArray[hash = pixel.ColorHash()] == pixel)
+                else if (UseINDEXChunks && colorArray[hash = pixel.ColorHash()] == pixel)
                 {
                     typeToEncode = ChunkType.QOI_OP_INDEX;
                 }
@@ -106,12 +112,12 @@ namespace QOI
                 // dg is defined first so it can be used for the LUMA check if this fails
                 // without having to re-compute
                 else if ((dg = (sbyte)(pixel.Green - previousPixel.Green)) is >= -2 and <= 1
-                    && (dr = (sbyte)(pixel.Red - previousPixel.Red)) is >= -2 and <= 1
+                    && UseDIFFChunks && (dr = (sbyte)(pixel.Red - previousPixel.Red)) is >= -2 and <= 1
                     && (db = (sbyte)(pixel.Blue - previousPixel.Blue)) is >= -2 and <= 1)
                 {
                     typeToEncode = ChunkType.QOI_OP_DIFF;
                 }
-                else if (dg is >= -32 and <= 31
+                else if (UseLUMAChunks && dg is >= -32 and <= 31
                     && (drDg = (sbyte)((pixel.Red - previousPixel.Red) - (pixel.Green - previousPixel.Green))) is >= -8 and <= 7
                     && (dbDg = (sbyte)((pixel.Blue - previousPixel.Blue) - (pixel.Green - previousPixel.Green))) is >= -8 and <= 7)
                 {
@@ -119,7 +125,7 @@ namespace QOI
                 }
                 else
                 {
-                    typeToEncode = ChunkType.QOI_OP_RGB;
+                    typeToEncode = UseRGBChunks ? ChunkType.QOI_OP_RGB : ChunkType.QOI_OP_RGBA;
                 }
 
                 destination[dataIndex] = (byte)typeToEncode;

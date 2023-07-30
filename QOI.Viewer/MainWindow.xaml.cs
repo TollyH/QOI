@@ -94,7 +94,7 @@ namespace QOI.Viewer
                         convertStopwatch.Stop();
                         trailingData = newQOIImage.TrailingData;
 
-                        int uncompressedBytes = newQOIImage.Pixels.Length * 4;
+                        int uncompressedBytes = newQOIImage.Pixels.Length * (newQOIImage.Channels == ChannelType.RGBA ? 4 : 3);
                         statsLabelResolution.Text = $"Resolution: {newQOIImage.Width} x {newQOIImage.Height} " +
                             $"({newQOIImage.Pixels.Length:n0})";
                         statsLabelChannels.Text = $"Channels: {newQOIImage.Channels}";
@@ -165,7 +165,14 @@ namespace QOI.Viewer
                 {
                     case "qoi":
                         {
-                            QOIEncoder encoder = new();
+                            QOIEncoder encoder = new()
+                            {
+                                UseINDEXChunks = !configNoEncodeINDEX.IsChecked,
+                                UseDIFFChunks = !configNoEncodeDIFF.IsChecked,
+                                UseLUMAChunks = !configNoEncodeLUMA.IsChecked,
+                                UseRUNChunks = !configNoEncodeRUN.IsChecked,
+                                UseRGBChunks = !configNoEncodeRGB.IsChecked
+                            };
                             QOIImage toSave = ((BitmapImage)imageView.Source).ConvertToQOIImage();
                             toSave.TrailingData = trailingData;
                             encoder.SaveImageFile(path, toSave);

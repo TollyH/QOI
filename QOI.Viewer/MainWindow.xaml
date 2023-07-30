@@ -37,6 +37,13 @@
                     <MenuItem x:Name="configChunkHideRUN" Header="Hide RUN Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RUN}"/>
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="Encoder">
+                <MenuItem x:Name="configNoEncodeINDEX" Header="Don't use INDEX chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeDIFF" Header="Don't use DIFF chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeLUMA" Header="Don't use LUMA chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeRUN" Header="Don't use RUN chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeRGB" Header="Don't use RGB chunks" IsCheckable="True"/>
+            </MenuItem>
         </Menu>
         <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
         <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8"/>
