@@ -8,6 +8,7 @@
         Title="Bulk QOI Converter" Height="350" Width="500" AllowDrop="True" Drop="Window_Drop">
     <Grid>
         <Button x:Name="selectFilesButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10" Content="Select Files" Padding="5,1,5,1" Click="selectFilesButton_Click"/>
+        <Button x:Name="clearFilesButton" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="90,10,10,10" Content="Clear Files" Padding="5,1,5,1" Click="clearFilesButton_Click"/>
         <ComboBox x:Name="formatSelector" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10" SelectedIndex="0">
             <ComboBoxItem Content="QOI" Tag="qoi"/>
             <ComboBoxItem Content="PNG" Tag="png"/>
@@ -19,7 +20,7 @@
             </ScrollViewer>
         </Border>
         <Button x:Name="setDestinationButton" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10" Content="Set Destination" Padding="5,1,5,1" Click="setDestinationButton_Click"/>
-        <TextBlock x:Name="outputLabel" VerticalAlignment="Bottom" Margin="110,10,110,10" Padding="2"/>
+        <TextBlock x:Name="outputLabel" VerticalAlignment="Bottom" Margin="110,10,110,10" Padding="2" Text="Please select a destination folder"/>
         <Button x:Name="convertButton" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10" Content="Convert" Padding="5,1,5,1" Click="convertButton_Click"/>
     </Grid>
 </Window>

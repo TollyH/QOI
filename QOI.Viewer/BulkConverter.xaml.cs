@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace QOI.Viewer
@@ -96,6 +95,7 @@ namespace QOI.Viewer
             string targetType = (formatSelector.SelectedItem as ComboBoxItem)?.Tag as string ?? "qoi";
 
             selectFilesButton.IsEnabled = false;
+            clearFilesButton.IsEnabled = false;
             setDestinationButton.IsEnabled = false;
             convertButton.IsEnabled = false;
             formatSelector.IsEnabled = false;
@@ -179,6 +179,11 @@ namespace QOI.Viewer
                     anyErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
 
             converting = false;
+            selectFilesButton.IsEnabled = true;
+            clearFilesButton.IsEnabled = true;
+            setDestinationButton.IsEnabled = true;
+            convertButton.IsEnabled = true;
+            formatSelector.IsEnabled = true;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -188,6 +193,12 @@ namespace QOI.Viewer
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 AddFiles(files);
             }
+        }
+
+        private void clearFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            filesToConvert.Clear();
+            filesPanel.Children.Clear();
         }
     }
 }
