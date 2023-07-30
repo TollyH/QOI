@@ -159,8 +159,11 @@ namespace QOI.Viewer
                     {
                         _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).IsError = true);
                     }
-                    aliveThreads--;
-                    complete++;
+                    finally
+                    {
+                        aliveThreads--;
+                        complete++;
+                    }
                 });
                 thread.Start();
             }
