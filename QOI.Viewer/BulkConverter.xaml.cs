@@ -62,7 +62,7 @@ namespace QOI.Viewer
                 "|JPEG Image File|*.jpg;*.jpeg"
             };
 
-            if (!fileDialog.ShowDialog() ?? true)
+            if (!fileDialog.ShowDialog(this) ?? true)
             {
                 return;
             }
@@ -78,7 +78,7 @@ namespace QOI.Viewer
                 EnsurePathExists = true
             };
 
-            if (folderDialog.ShowDialog() != CommonFileDialogResult.Ok)
+            if (folderDialog.ShowDialog(this) != CommonFileDialogResult.Ok)
             {
                 return;
             }
@@ -229,7 +229,7 @@ namespace QOI.Viewer
                 Multiselect = true
             };
 
-            if (folderDialog.ShowDialog() != CommonFileDialogResult.Ok)
+            if (folderDialog.ShowDialog(this) != CommonFileDialogResult.Ok)
             {
                 return;
             }

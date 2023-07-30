@@ -237,7 +237,7 @@ namespace QOI.Viewer
                 "|JPEG Image File|*.jpg;*.jpeg"
             };
 
-            if (!fileDialog.ShowDialog() ?? true)
+            if (!fileDialog.ShowDialog(this) ?? true)
             {
                 return;
             }
@@ -262,7 +262,7 @@ namespace QOI.Viewer
                 "|JPEG Image File|*.jpg;*.jpeg"
             };
 
-            if (!fileDialog.ShowDialog() ?? true)
+            if (!fileDialog.ShowDialog(this) ?? true)
             {
                 return;
             }
