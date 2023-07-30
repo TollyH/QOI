@@ -100,6 +100,7 @@ namespace QOI.Viewer
             convertButton.IsEnabled = false;
             formatSelector.IsEnabled = false;
 
+            bool anyErrors = false;
             converting = true;
             int complete = 0;
             int aliveThreads = 0;
@@ -158,6 +159,7 @@ namespace QOI.Viewer
                     catch
                     {
                         _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).IsError = true);
+                        anyErrors = true;
                     }
                     finally
                     {
@@ -171,8 +173,11 @@ namespace QOI.Viewer
             {
                 await Task.Delay(100);
             }
-            outputLabel.Foreground = Brushes.DarkGreen;
-            outputLabel.FontWeight = FontWeights.Bold;
+
+            _ = MessageBox.Show(anyErrors ? "Some conversions failed" : "All conversions have completed.",
+                    "Complete", MessageBoxButton.OK,
+                    anyErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
+
             converting = false;
         }
 
