@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Collections.Immutable;
 
 namespace QOI
 {
@@ -30,7 +31,7 @@ namespace QOI
         /// </summary>
         public int PixelDataLength { get; private set; } = 0;
 
-        public readonly Dictionary<ChunkType, Pixel> DebugModeColors = new()
+        public static readonly ImmutableDictionary<ChunkType, Pixel> DebugModeColors = new Dictionary<ChunkType, Pixel>()
         {
             { ChunkType.QOI_OP_RGB, new Pixel(255, 0, 0) },
             { ChunkType.QOI_OP_RGBA, new Pixel(0, 255, 0) },
@@ -38,7 +39,9 @@ namespace QOI
             { ChunkType.QOI_OP_DIFF, new Pixel(255, 255, 0) },
             { ChunkType.QOI_OP_LUMA, new Pixel(255, 0, 255) },
             { ChunkType.QOI_OP_RUN, new Pixel(0, 255, 255) },
-        };
+        }.ToImmutableDictionary();
+        public static readonly ImmutableDictionary<Pixel, ChunkType> InvertedDebugModeColors =
+            DebugModeColors.ToDictionary(kv => kv.Value, kv => kv.Key).ToImmutableDictionary();
 
         /// <summary>
         /// Decode a QOI image byte stream.
