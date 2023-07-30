@@ -13,6 +13,7 @@
     <PackageProjectUrl>https://github.com/TollyH/QOI</PackageProjectUrl>
     <RepositoryUrl>https://github.com/TollyH/QOI</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
