@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -63,6 +64,14 @@ namespace QOI.Viewer
         public void LoadImage(string path)
         {
             string extension = path.Split('.')[^1].ToLower();
+            HashSet<ChunkType> excludeChunks = new();
+            foreach (MenuItem chunkExcludeItem in chunkHideMenu.Items.OfType<MenuItem>())
+            {
+                if (chunkExcludeItem.IsChecked)
+                {
+                    excludeChunks.Add((ChunkType)chunkExcludeItem.Tag);
+                }
+            }
 
             try
             {
@@ -78,7 +87,10 @@ namespace QOI.Viewer
                         QOIImage newQOIImage = decoder.DecodeImageFile(path);
                         decodeStopwatch.Stop();
                         Stopwatch convertStopwatch = Stopwatch.StartNew();
-                        imageView.Source = newQOIImage.ConvertToBitmapImage();
+                        imageView.Source = excludeChunks.Count > 0
+                            ? newQOIImage.ConvertToBitmapImageFilterChunks(decoder.GenerateDebugPixels(
+                                File.ReadAllBytes(path).AsSpan()[14..], (uint)newQOIImage.Pixels.Length), excludeChunks)
+                            : newQOIImage.ConvertToBitmapImage();
                         convertStopwatch.Stop();
                         trailingData = newQOIImage.TrailingData;
 
@@ -192,8 +204,6 @@ namespace QOI.Viewer
                 return;
 #endif
             }
-
-            openFile = path;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -240,7 +250,7 @@ namespace QOI.Viewer
             SaveImage(fileDialog.FileName);
         }
 
-        private void configDebugMode_Click(object sender, RoutedEventArgs e)
+        private void ReloadOnClick(object sender, RoutedEventArgs e)
         {
             if (File.Exists(openFile))
             {

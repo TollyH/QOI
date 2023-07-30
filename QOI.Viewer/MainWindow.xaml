@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QOI.Viewer"
+        xmlns:qoi="clr-namespace:QOI;assembly=QOI"
         mc:Ignorable="d"
         Title="QOI Image Viewer" Height="600" Width="1000" Drop="Window_Drop" AllowDrop="True">
     <Grid>
@@ -25,7 +26,16 @@
             <MenuItem Header="View">
                 <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
                 <Separator/>
-                <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="configDebugMode_Click"/>
+                <MenuItem x:Name="configDebugMode" Header="Debug Mode" IsCheckable="True" Click="ReloadOnClick"/>
+                <Separator/>
+                <MenuItem x:Name="chunkHideMenu" Header="Hide Chunk Types">
+                    <MenuItem x:Name="configChunkHideRGB" Header="Hide RGB Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGB}"/>
+                    <MenuItem x:Name="configChunkHideRGBA" Header="Hide RGBA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGBA}"/>
+                    <MenuItem x:Name="configChunkHideINDEX" Header="Hide INDEX Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_INDEX}"/>
+                    <MenuItem x:Name="configChunkHideDIFF" Header="Hide DIFF Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_DIFF}"/>
+                    <MenuItem x:Name="configChunkHideLUMA" Header="Hide LUMA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_LUMA}"/>
+                    <MenuItem x:Name="configChunkHideRUN" Header="Hide RUN Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RUN}"/>
+                </MenuItem>
             </MenuItem>
         </Menu>
         <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
