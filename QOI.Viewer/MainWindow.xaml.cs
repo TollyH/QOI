@@ -24,7 +24,9 @@ namespace QOI.Viewer
             set
             {
                 _openFile = value;
-                Title = $"QOI Image Viewer - ({indexInFolder + 1}/{filesInFolder.Length}) {value}";
+                Title = filesInFolder.Length > 0
+                    ? $"QOI Image Viewer - ({indexInFolder + 1}/{filesInFolder.Length}) {value}"
+                    : "QOI Image Viewer";
             }
         }
 
@@ -63,6 +65,18 @@ namespace QOI.Viewer
                 converter.AddFiles(args);
                 _ = converter.ShowDialog();
             }
+        }
+
+        public void ShowEmptyStats()
+        {
+            statsLabelResolution.Text = "Resolution: Stats for QOI images only";
+            statsLabelChannels.Text = "Channels: Stats for QOI images only";
+            statsLabelColorspace.Text = "Colorspace: Stats for QOI images only";
+            statsLabelTimeDecoding.Text = "Time to Decode: Stats for QOI images only";
+            statsLabelTimeConverting.Text = "Time to Convert: Stats for QOI images only";
+            statsLabelCompression.Text = "Compression: Stats for QOI images only";
+            statsLabelTrailingData.Text = "Trailing Data Length: Stats for QOI images only";
+            statsLabelChunkStats.Text = "Chunk Counts: Stats for QOI images only";
         }
 
         public void LoadImage(string path)
@@ -128,16 +142,7 @@ namespace QOI.Viewer
                     case "jpg":
                     case "jpeg":
                         imageView.Source = new BitmapImage(new Uri(path));
-
-                        statsLabelResolution.Text = "Resolution: Stats for QOI images only";
-                        statsLabelChannels.Text = "Channels: Stats for QOI images only";
-                        statsLabelColorspace.Text = "Colorspace: Stats for QOI images only";
-                        statsLabelTimeDecoding.Text = "Time to Decode: Stats for QOI images only";
-                        statsLabelTimeConverting.Text = "Time to Convert: Stats for QOI images only";
-                        statsLabelCompression.Text = "Compression: Stats for QOI images only";
-                        statsLabelTrailingData.Text = "Trailing Data Length: Stats for QOI images only";
-                        statsLabelChunkStats.Text = "Chunk Counts: Stats for QOI images only";
-
+                        ShowEmptyStats();
                         break;
                     default:
                         _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
@@ -224,6 +229,22 @@ namespace QOI.Viewer
                 return;
 #endif
             }
+        }
+
+        public void LoadImageFromClipboard()
+        {
+            if (!Clipboard.ContainsImage())
+            {
+                _ = MessageBox.Show("There is no image currently on the clipboard.", "No Clipboard Image",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            imageView.Source = ClipboardImageConvert.GetBitmapSourceFromClipboard();
+            lastOpenedFolder = "";
+            indexInFolder = 0;
+            filesInFolder = Array.Empty<string>();
+            openFile = "";
+            ShowEmptyStats();
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -325,7 +346,23 @@ namespace QOI.Viewer
                     }
                     LoadImage(filesInFolder[++indexInFolder]);
                     break;
+                case Key.V:
+                    if (Keyboard.Modifiers == ModifierKeys.Control && Clipboard.ContainsImage())
+                    {
+                        LoadImageFromClipboard();
+                    }
+                    break;
             }
+        }
+
+        private void openClipboardItem_Click(object sender, RoutedEventArgs e)
+        {
+            LoadImageFromClipboard();
+        }
+
+        private void FileMenuItem_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            openClipboardItem.IsEnabled = Clipboard.ContainsImage();
         }
     }
 }

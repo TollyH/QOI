@@ -19,8 +19,9 @@
             <ColumnDefinition Width="0" d:Width="200"/>
         </Grid.ColumnDefinitions>
         <Menu Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Top">
-            <MenuItem Header="File">
+            <MenuItem Header="File" SubmenuOpened="FileMenuItem_SubmenuOpened">
                 <MenuItem Header="Open" Click="OpenItem_Click"/>
+                <MenuItem x:Name="openClipboardItem" Header="Open from clipboard" Click="openClipboardItem_Click"/>
                 <MenuItem Header="Save as" Click="SaveItem_Click"/>
                 <Separator/>
                 <MenuItem Header="Bulk converter..." Click="BulkConverterItem_Click"/>
