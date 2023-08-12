@@ -173,7 +173,10 @@ namespace QOI.Viewer
                 indexInFolder = Array.IndexOf(filesInFolder, fullPath);
             }
             openFile = fullPath;
-            FitImage();
+            if (!zoomedSinceFit)
+            {
+                FitImage();
+            }
         }
 
         public void SaveImage(string path)
@@ -248,7 +251,10 @@ namespace QOI.Viewer
             filesInFolder = Array.Empty<string>();
             openFile = "";
             ShowEmptyStats();
-            FitImage();
+            if (!zoomedSinceFit)
+            {
+                FitImage();
+            }
         }
 
         public void FitImage()
