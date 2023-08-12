@@ -317,7 +317,8 @@ namespace QOI.Viewer
                 AddExtension = true,
                 Filter = "QOI Image File|*.qoi" +
                 "|PNG Image File|*.png" +
-                "|JPEG Image File|*.jpg;*.jpeg"
+                "|JPEG Image File|*.jpg;*.jpeg",
+                FileName = Path.GetFileNameWithoutExtension(openFile)
             };
 
             if (!fileDialog.ShowDialog(this) ?? true)
