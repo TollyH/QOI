@@ -191,7 +191,7 @@ namespace QOI.Viewer
                                 UseRUNChunks = !configNoEncodeRUN.IsChecked,
                                 UseRGBChunks = !configNoEncodeRGB.IsChecked
                             };
-                            QOIImage toSave = ((BitmapImage)imageView.Source).ConvertToQOIImage();
+                            QOIImage toSave = ((BitmapSource)imageView.Source).ConvertToQOIImage();
                             toSave.TrailingData = trailingData;
                             encoder.SaveImageFile(path, toSave);
                             break;
@@ -199,7 +199,7 @@ namespace QOI.Viewer
                     case "png":
                         {
                             PngBitmapEncoder encoder = new();
-                            encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
+                            encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imageView.Source));
                             using FileStream fileStream = new(path, FileMode.Create);
                             encoder.Save(fileStream);
                             break;
@@ -208,7 +208,7 @@ namespace QOI.Viewer
                     case "jpeg":
                         {
                             JpegBitmapEncoder encoder = new();
-                            encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageView.Source));
+                            encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imageView.Source));
                             using FileStream fileStream = new(path, FileMode.Create);
                             encoder.Save(fileStream);
                             break;
@@ -268,7 +268,7 @@ namespace QOI.Viewer
 
         private void SaveItem_Click(object sender, RoutedEventArgs e)
         {
-            if (imageView.Source is null or not BitmapImage)
+            if (imageView.Source is null or not BitmapSource)
             {
                 return;
             }

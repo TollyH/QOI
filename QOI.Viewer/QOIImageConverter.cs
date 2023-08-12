@@ -105,9 +105,9 @@ namespace QOI.Viewer
             return bitmapImage;
         }
 
-        public static QOIImage ConvertToQOIImage(this BitmapImage image)
+        public static QOIImage ConvertToQOIImage(this BitmapSource image)
         {
-            // Convert BitmapImage to Bitmap
+            // Convert BitmapSource to Bitmap
             Bitmap bitmap;
             using (MemoryStream outStream = new())
             {
