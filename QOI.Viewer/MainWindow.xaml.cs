@@ -107,10 +107,10 @@ namespace QOI.Viewer
                         QOIImage newQOIImage = decoder.DecodeImageFile(path);
                         decodeStopwatch.Stop();
                         Stopwatch convertStopwatch = Stopwatch.StartNew();
-                        imageView.Source = excludeChunks.Count > 0
+                        ChangeImageSource(excludeChunks.Count > 0
                             ? newQOIImage.ConvertToBitmapImageFilterChunks(decoder.GenerateDebugPixels(
                                 File.ReadAllBytes(path).AsSpan()[14..], (uint)newQOIImage.Pixels.Length), excludeChunks)
-                            : newQOIImage.ConvertToBitmapImage();
+                            : newQOIImage.ConvertToBitmapImage());
                         convertStopwatch.Stop();
                         trailingData = newQOIImage.TrailingData;
 
@@ -143,7 +143,7 @@ namespace QOI.Viewer
                     case "png":
                     case "jpg":
                     case "jpeg":
-                        imageView.Source = new BitmapImage(new Uri(path));
+                        ChangeImageSource(new BitmapImage(new Uri(path)));
                         ShowEmptyStats();
                         break;
                     default:
@@ -245,7 +245,7 @@ namespace QOI.Viewer
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            imageView.Source = ClipboardImageConvert.GetBitmapSourceFromClipboard();
+            ChangeImageSource(ClipboardImageConvert.GetBitmapSourceFromClipboard());
             lastOpenedFolder = "";
             indexInFolder = 0;
             filesInFolder = Array.Empty<string>();
@@ -264,8 +264,8 @@ namespace QOI.Viewer
                 return;
             }
 
-            double toFitX = imageScroll.ActualWidth / imageView.Source.Width;
-            double toFitY = imageScroll.ActualHeight / imageView.Source.Height;
+            double toFitX = imageScroll.ActualWidth / imageView.Width;
+            double toFitY = imageScroll.ActualHeight / imageView.Height;
             double toFitBoth = Math.Min(toFitY, toFitX);
             imageViewScale.ScaleX = toFitBoth;
             imageViewScale.ScaleY = toFitBoth;
@@ -344,6 +344,13 @@ namespace QOI.Viewer
             }
 
             Clipboard.SetImage((BitmapSource)imageView.Source);
+        }
+
+        private void ChangeImageSource(BitmapSource? source)
+        {
+            imageView.Source = source;
+            imageView.Width = source?.PixelWidth ?? double.NaN;
+            imageView.Height = source?.PixelHeight ?? double.NaN;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
