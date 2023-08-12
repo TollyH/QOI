@@ -319,12 +319,22 @@ namespace QOI.Viewer
             }
         }
 
+        public void CopyImageToClipboard()
+        {
+            if (imageView.Source is null or not BitmapSource)
+            {
+                return;
+            }
+
+            Clipboard.SetImage((BitmapSource)imageView.Source);
+        }
+
         private void OpenItem_Click(object sender, RoutedEventArgs e)
         {
             PromptFileOpen();
         }
 
-        private void SaveItem_Click(object sender, RoutedEventArgs e)
+        private void saveItem_Click(object sender, RoutedEventArgs e)
         {
             PromptFileSave();
         }
@@ -411,6 +421,12 @@ namespace QOI.Viewer
                     configDebugMode.IsChecked = !configDebugMode.IsChecked;
                     Reload();
                     break;
+                case Key.C:
+                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    {
+                        CopyImageToClipboard();
+                    }
+                    break;
             }
         }
 
@@ -422,6 +438,8 @@ namespace QOI.Viewer
         private void FileMenuItem_SubmenuOpened(object sender, RoutedEventArgs e)
         {
             openClipboardItem.IsEnabled = Clipboard.ContainsImage();
+            saveItem.IsEnabled = imageView.Source is BitmapSource;
+            copyItem.IsEnabled = imageView.Source is BitmapSource;
         }
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -453,6 +471,11 @@ namespace QOI.Viewer
         private void FitImageItem_Click(object sender, RoutedEventArgs e)
         {
             FitImage();
+        }
+
+        private void copyItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyImageToClipboard();
         }
     }
 }

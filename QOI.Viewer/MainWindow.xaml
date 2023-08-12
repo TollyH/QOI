@@ -22,7 +22,8 @@
             <MenuItem Header="_File" SubmenuOpened="FileMenuItem_SubmenuOpened">
                 <MenuItem Header="_Open" Click="OpenItem_Click" InputGestureText="Ctrl+O"/>
                 <MenuItem x:Name="openClipboardItem" Header="Open from _clipboard" Click="openClipboardItem_Click" InputGestureText="Ctrl+V"/>
-                <MenuItem Header="_Save as" Click="SaveItem_Click" InputGestureText="Ctrl+S"/>
+                <MenuItem x:Name="copyItem" Header="_Copy" Click="copyItem_Click" InputGestureText="Ctrl+C"/>
+                <MenuItem x:Name="saveItem" Header="_Save as" Click="saveItem_Click" InputGestureText="Ctrl+S"/>
                 <Separator/>
                 <MenuItem Header="_Bulk converter..." Click="BulkConverterItem_Click" InputGestureText="Ctrl+B"/>
             </MenuItem>
