@@ -273,6 +273,17 @@ namespace QOI.Viewer
             zoomedSinceFit = false;
         }
 
+        public void ZoomActualSize()
+        {
+            if (imageView.Source is null)
+            {
+                return;
+            }
+            imageViewScale.ScaleX = 1;
+            imageViewScale.ScaleY = 1;
+            zoomedSinceFit = true;
+        }
+
         public void PromptFileOpen()
         {
             OpenFileDialog fileDialog = new()
@@ -433,6 +444,9 @@ namespace QOI.Viewer
                         CopyImageToClipboard();
                     }
                     break;
+                case Key.A:
+                    ZoomActualSize();
+                    break;
             }
         }
 
@@ -482,6 +496,11 @@ namespace QOI.Viewer
         private void copyItem_Click(object sender, RoutedEventArgs e)
         {
             CopyImageToClipboard();
+        }
+
+        private void ActualSizeItem_Click(object sender, RoutedEventArgs e)
+        {
+            ZoomActualSize();
         }
     }
 }
