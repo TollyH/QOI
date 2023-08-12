@@ -48,7 +48,7 @@
                 <MenuItem x:Name="configNoEncodeRGB" Header="Don't use RGB chunks" IsCheckable="True"/>
             </MenuItem>
         </Menu>
-        <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality" MouseMove="imageView_MouseMove"/>
+        <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality"/>
         <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8" Focusable="False"/>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#FFF0F0F0">
             <TextBlock x:Name="statsLabelResolution" Margin="5" Padding="5" FontSize="14" Text="Resolution:"/>

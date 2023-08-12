@@ -308,15 +308,6 @@ namespace QOI.Viewer
             }
         }
 
-        private void imageView_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (e.LeftButton == MouseButtonState.Pressed)
-            {
-                DataObject dObj = new(DataFormats.FileDrop, new string[1] { openFile });
-                _ = DragDrop.DoDragDrop(imageView, dObj, DragDropEffects.Copy);
-            }
-        }
-
         private void configNearestNeighbor_Click(object sender, RoutedEventArgs e)
         {
             RenderOptions.SetBitmapScalingMode(imageView, configNearestNeighbor.IsChecked
