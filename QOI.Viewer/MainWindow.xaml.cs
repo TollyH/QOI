@@ -34,6 +34,8 @@ namespace QOI.Viewer
         private string[] filesInFolder = Array.Empty<string>();
         private int indexInFolder = 0;
 
+        private bool zoomedSinceFit = false;
+
         private byte[] trailingData = Array.Empty<byte>();
 
         private static readonly Dictionary<ChunkType, string> debugModeColors = new()
@@ -171,6 +173,7 @@ namespace QOI.Viewer
                 indexInFolder = Array.IndexOf(filesInFolder, fullPath);
             }
             openFile = fullPath;
+            FitImage();
         }
 
         public void SaveImage(string path)
@@ -245,6 +248,23 @@ namespace QOI.Viewer
             filesInFolder = Array.Empty<string>();
             openFile = "";
             ShowEmptyStats();
+            FitImage();
+        }
+
+        public void FitImage()
+        {
+            if (imageView.Source is null)
+            {
+                return;
+            }
+
+            double toFitX = imageScroll.ActualWidth / imageView.Source.Width;
+            double toFitY = imageScroll.ActualHeight / imageView.Source.Height;
+            double toFitBoth = Math.Min(toFitY, toFitX);
+            imageViewScale.ScaleX = toFitBoth;
+            imageViewScale.ScaleY = toFitBoth;
+
+            zoomedSinceFit = false;
         }
 
         private void OpenItem_Click(object sender, RoutedEventArgs e)
@@ -354,6 +374,37 @@ namespace QOI.Viewer
         private void FileMenuItem_SubmenuOpened(object sender, RoutedEventArgs e)
         {
             openClipboardItem.IsEnabled = Clipboard.ContainsImage();
+        }
+
+        private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                // Prevent zoom from also scrolling
+                e.Handled = true;
+
+                // Logarithmic zooming makes zoom look more "linear" to the eye
+                double value = Math.Exp(Math.Log(imageViewScale.ScaleX) + (e.Delta * 0.0005));
+                if (imageViewScale.ScaleX + value > 0 && imageViewScale.ScaleY + value > 0)
+                {
+                    zoomedSinceFit = true;
+                    imageViewScale.ScaleX = value;
+                    imageViewScale.ScaleY = value;
+                }
+            }
+        }
+
+        private void imageScroll_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (!zoomedSinceFit)
+            {
+                FitImage();
+            }
+        }
+
+        private void FitImageItem_Click(object sender, RoutedEventArgs e)
+        {
+            FitImage();
         }
     }
 }

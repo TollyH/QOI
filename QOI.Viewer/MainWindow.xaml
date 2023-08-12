@@ -27,6 +27,8 @@
                 <MenuItem Header="Bulk converter..." Click="BulkConverterItem_Click"/>
             </MenuItem>
             <MenuItem Header="View">
+                <MenuItem Header="Fit image" Click="FitImageItem_Click"/>
+                <Separator/>
                 <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
                 <Separator/>
                 <MenuItem x:Name="configDebugMode" Header="Debug Mode (Color chunk types)" IsCheckable="True" Click="ReloadOnClick"/>
@@ -48,7 +50,13 @@
                 <MenuItem x:Name="configNoEncodeRGB" Header="Don't use RGB chunks" IsCheckable="True"/>
             </MenuItem>
         </Menu>
-        <Image x:Name="imageView" Grid.Column="0" Grid.Row="1" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <ScrollViewer x:Name="imageScroll" Grid.Column="0" Grid.Row="1" Margin="0,0,5,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" SizeChanged="imageScroll_SizeChanged">
+            <Image x:Name="imageView" RenderOptions.BitmapScalingMode="HighQuality" RenderTransformOrigin="0.5, 0.5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image.LayoutTransform>
+                    <ScaleTransform x:Name="imageViewScale"/>
+                </Image.LayoutTransform>
+            </Image>
+        </ScrollViewer>
         <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8" Focusable="False"/>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#FFF0F0F0">
             <TextBlock x:Name="statsLabelResolution" Margin="5" Padding="5" FontSize="14" Text="Resolution:"/>
