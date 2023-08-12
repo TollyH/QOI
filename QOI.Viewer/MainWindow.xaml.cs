@@ -267,7 +267,7 @@ namespace QOI.Viewer
             zoomedSinceFit = false;
         }
 
-        private void OpenItem_Click(object sender, RoutedEventArgs e)
+        public void PromptFileOpen()
         {
             OpenFileDialog fileDialog = new()
             {
@@ -286,7 +286,7 @@ namespace QOI.Viewer
             LoadImage(fileDialog.FileName);
         }
 
-        private void SaveItem_Click(object sender, RoutedEventArgs e)
+        public void PromptFileSave()
         {
             if (imageView.Source is null or not BitmapSource)
             {
@@ -311,12 +311,27 @@ namespace QOI.Viewer
             SaveImage(fileDialog.FileName);
         }
 
-        private void ReloadOnClick(object sender, RoutedEventArgs e)
+        public void Reload()
         {
             if (File.Exists(openFile))
             {
                 LoadImage(openFile);
             }
+        }
+
+        private void OpenItem_Click(object sender, RoutedEventArgs e)
+        {
+            PromptFileOpen();
+        }
+
+        private void SaveItem_Click(object sender, RoutedEventArgs e)
+        {
+            PromptFileSave();
+        }
+
+        private void ReloadOnClick(object sender, RoutedEventArgs e)
+        {
+            Reload();
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -328,7 +343,7 @@ namespace QOI.Viewer
             }
         }
 
-        private void configNearestNeighbor_Click(object sender, RoutedEventArgs e)
+        private void configNearestNeighbor_Checked(object sender, RoutedEventArgs e)
         {
             RenderOptions.SetBitmapScalingMode(imageView, configNearestNeighbor.IsChecked
                 ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
@@ -341,6 +356,11 @@ namespace QOI.Viewer
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            if (InputManager.Current.IsInMenuMode)
+            {
+                // If user is navigating the menu with their keyboard, don't run key bindings
+                return;
+            }
             switch (e.Key)
             {
                 case Key.Left:
@@ -362,6 +382,34 @@ namespace QOI.Viewer
                     {
                         LoadImageFromClipboard();
                     }
+                    break;
+                case Key.F:
+                    FitImage();
+                    break;
+                case Key.O:
+                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    {
+                        PromptFileOpen();
+                    }
+                    break;
+                case Key.S:
+                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    {
+                        PromptFileSave();
+                    }
+                    break;
+                case Key.B:
+                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    {
+                        _ = new BulkConverter().ShowDialog();
+                    }
+                    break;
+                case Key.N:
+                    configNearestNeighbor.IsChecked = !configNearestNeighbor.IsChecked;
+                    break;
+                case Key.D:
+                    configDebugMode.IsChecked = !configDebugMode.IsChecked;
+                    Reload();
                     break;
             }
         }

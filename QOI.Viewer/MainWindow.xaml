@@ -19,35 +19,35 @@
             <ColumnDefinition Width="0" d:Width="200"/>
         </Grid.ColumnDefinitions>
         <Menu Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Top">
-            <MenuItem Header="File" SubmenuOpened="FileMenuItem_SubmenuOpened">
-                <MenuItem Header="Open" Click="OpenItem_Click"/>
-                <MenuItem x:Name="openClipboardItem" Header="Open from clipboard" Click="openClipboardItem_Click"/>
-                <MenuItem Header="Save as" Click="SaveItem_Click"/>
+            <MenuItem Header="_File" SubmenuOpened="FileMenuItem_SubmenuOpened">
+                <MenuItem Header="_Open" Click="OpenItem_Click" InputGestureText="Ctrl+O"/>
+                <MenuItem x:Name="openClipboardItem" Header="Open from _clipboard" Click="openClipboardItem_Click" InputGestureText="Ctrl+V"/>
+                <MenuItem Header="_Save as" Click="SaveItem_Click" InputGestureText="Ctrl+S"/>
                 <Separator/>
-                <MenuItem Header="Bulk converter..." Click="BulkConverterItem_Click"/>
+                <MenuItem Header="_Bulk converter..." Click="BulkConverterItem_Click" InputGestureText="Ctrl+B"/>
             </MenuItem>
-            <MenuItem Header="View">
-                <MenuItem Header="Fit image" Click="FitImageItem_Click"/>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Fit image" Click="FitImageItem_Click" InputGestureText="F"/>
                 <Separator/>
-                <MenuItem x:Name="configNearestNeighbor" Header="Preserve Pixel Edges (Nearest Neighbor)" IsCheckable="True" Click="configNearestNeighbor_Click"/>
+                <MenuItem x:Name="configNearestNeighbor" Header="_Preserve Pixel Edges (Nearest Neighbor)" InputGestureText="N" IsCheckable="True" Checked="configNearestNeighbor_Checked" Unchecked="configNearestNeighbor_Checked"/>
                 <Separator/>
-                <MenuItem x:Name="configDebugMode" Header="Debug Mode (Color chunk types)" IsCheckable="True" Click="ReloadOnClick"/>
+                <MenuItem x:Name="configDebugMode" Header="_Debug Mode (Color chunk types)" InputGestureText="D" IsCheckable="True" Click="ReloadOnClick"/>
                 <Separator/>
-                <MenuItem x:Name="chunkHideMenu" Header="Hide Chunk Types">
-                    <MenuItem x:Name="configChunkHideRGB" Header="Hide RGB Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGB}"/>
-                    <MenuItem x:Name="configChunkHideRGBA" Header="Hide RGBA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGBA}"/>
-                    <MenuItem x:Name="configChunkHideINDEX" Header="Hide INDEX Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_INDEX}"/>
-                    <MenuItem x:Name="configChunkHideDIFF" Header="Hide DIFF Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_DIFF}"/>
-                    <MenuItem x:Name="configChunkHideLUMA" Header="Hide LUMA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_LUMA}"/>
-                    <MenuItem x:Name="configChunkHideRUN" Header="Hide RUN Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RUN}"/>
+                <MenuItem x:Name="chunkHideMenu" Header="_Hide Chunk Types">
+                    <MenuItem x:Name="configChunkHideRGB" Header="_Hide RGB Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGB}"/>
+                    <MenuItem x:Name="configChunkHideRGBA" Header="Hide _RGBA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGBA}"/>
+                    <MenuItem x:Name="configChunkHideINDEX" Header="Hide _INDEX Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_INDEX}"/>
+                    <MenuItem x:Name="configChunkHideDIFF" Header="Hide _DIFF Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_DIFF}"/>
+                    <MenuItem x:Name="configChunkHideLUMA" Header="Hide _LUMA Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_LUMA}"/>
+                    <MenuItem x:Name="configChunkHideRUN" Header="Hide RUN _Chunks" IsCheckable="True" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RUN}"/>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="Encoder">
-                <MenuItem x:Name="configNoEncodeINDEX" Header="Don't use INDEX chunks" IsCheckable="True"/>
-                <MenuItem x:Name="configNoEncodeDIFF" Header="Don't use DIFF chunks" IsCheckable="True"/>
-                <MenuItem x:Name="configNoEncodeLUMA" Header="Don't use LUMA chunks" IsCheckable="True"/>
-                <MenuItem x:Name="configNoEncodeRUN" Header="Don't use RUN chunks" IsCheckable="True"/>
-                <MenuItem x:Name="configNoEncodeRGB" Header="Don't use RGB chunks" IsCheckable="True"/>
+            <MenuItem Header="_Encoder">
+                <MenuItem x:Name="configNoEncodeINDEX" Header="Don't use _INDEX chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeDIFF" Header="Don't use _DIFF chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeLUMA" Header="Don't use _LUMA chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeRUN" Header="Don't use _RUN chunks" IsCheckable="True"/>
+                <MenuItem x:Name="configNoEncodeRGB" Header="_Don't use RGB chunks" IsCheckable="True"/>
             </MenuItem>
         </Menu>
         <ScrollViewer x:Name="imageScroll" Grid.Column="0" Grid.Row="1" Margin="0,0,5,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" SizeChanged="imageScroll_SizeChanged">
