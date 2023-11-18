@@ -20,8 +20,12 @@ namespace QOI.Viewer
         private string destination = "";
         private bool converting = false;
 
+        private readonly CancellationTokenSource cancellationTokenSource = new();
+        private readonly CancellationToken cancellationToken;
+
         public BulkConverter()
         {
+            cancellationToken = cancellationTokenSource.Token;
             InitializeComponent();
         }
 
@@ -109,97 +113,100 @@ namespace QOI.Viewer
             convertButton.IsEnabled = false;
             formatSelector.IsEnabled = false;
 
-            bool anyErrors = false;
             converting = true;
             int complete = 0;
-            int aliveThreads = 0;
-            for (int i = 0; i < filesToConvert.Count; i++)
-            {
-                string file = filesToConvert[i];
-                if (!File.Exists(file))
-                {
-                    complete++;
-                    continue;
-                }
+            bool anyErrors = false;
 
-                while (aliveThreads >= Environment.ProcessorCount)
-                {
-                    await Task.Delay(100);
-                }
-                aliveThreads++;
-                string thisFile = file;
-                int thisIndex = i;
-                Thread thread = new(() =>
-                {
-                    try
+            try
+            {
+                await Parallel.ForAsync(0, filesToConvert.Count,
+                    new ParallelOptions()
+                        { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = cancellationToken },
+                    async (i, c) =>
                     {
-                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Processing);
-                        string destinationFile = Path.Join(destination,
-                            Path.ChangeExtension(Path.GetFileName(thisFile), targetType));
-                        BitmapImage source = Path.GetExtension(thisFile).ToLower() == ".qoi"
-                            ? new QOIDecoder().DecodeImageFile(thisFile).ConvertToBitmapImage()
-                            : new(new Uri(thisFile));
-                        switch (targetType)
+                        string file = filesToConvert[i];
+                        if (!File.Exists(file))
                         {
-                            case "qoi":
+                            complete++;
+                            return;
+                        }
+
+                        try
+                        {
+                            _ = Dispatcher.Invoke(() =>
+                                ((FileProgress)filesPanel.Children[i]).CurrentState =
+                                FileProgress.State.Processing);
+                            string destinationFile = Path.Join(destination,
+                                Path.ChangeExtension(Path.GetFileName(file), targetType));
+                            BitmapImage source = Path.GetExtension(file).ToLower() == ".qoi"
+                                ? new QOIDecoder().DecodeImageFile(file).ConvertToBitmapImage()
+                                : new(new Uri(file));
+                            switch (targetType)
+                            {
+                                case "qoi":
                                 {
                                     QOIEncoder encoder = new();
                                     encoder.SaveImageFile(destinationFile, source.ConvertToQOIImage());
                                     break;
                                 }
-                            case "jpg":
+                                case "jpg":
                                 {
                                     JpegBitmapEncoder encoder = new();
                                     encoder.Frames.Add(BitmapFrame.Create(source));
-                                    using FileStream fileStream = new(destinationFile, FileMode.Create);
+                                    await using FileStream fileStream = new(destinationFile, FileMode.Create);
                                     encoder.Save(fileStream);
                                     break;
                                 }
-                            case "png":
+                                case "png":
                                 {
                                     PngBitmapEncoder encoder = new();
                                     encoder.Frames.Add(BitmapFrame.Create(source));
-                                    using FileStream fileStream = new(destinationFile, FileMode.Create);
+                                    await using FileStream fileStream = new(destinationFile, FileMode.Create);
                                     encoder.Save(fileStream);
                                     break;
                                 }
+                            }
+                            _ = Dispatcher.Invoke(() =>
+                                ((FileProgress)filesPanel.Children[i]).CurrentState = FileProgress.State.Complete);
                         }
-                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Complete);
-                    }
-                    catch
-                    {
-                        _ = Dispatcher.Invoke(() => ((FileProgress)filesPanel.Children[thisIndex]).CurrentState = FileProgress.State.Error);
-                        anyErrors = true;
-                    }
-                    finally
-                    {
-                        aliveThreads--;
-                        complete++;
-                        Dispatcher.Invoke(() =>
+                        catch
                         {
-                            progressLabel.Text = $"{complete}/{filesToConvert.Count}";
-                            conversionProgress.Value = complete;
-                        });
-                    }
-                });
-                thread.Start();
+                            anyErrors = true;
+                            _ = Dispatcher.Invoke(() =>
+                                ((FileProgress)filesPanel.Children[i]).CurrentState = FileProgress.State.Error);
+#if DEBUG
+                            throw;
+#endif
+                        }
+                        finally
+                        {
+                            complete++;
+                            Dispatcher.Invoke(() =>
+                            {
+                                progressLabel.Text = $"{complete}/{filesToConvert.Count}";
+                                conversionProgress.Value = complete;
+                            });
+                        }
+                    });
             }
-            while (complete < filesToConvert.Count)
+            catch (TaskCanceledException)
             {
-                await Task.Delay(100);
+                return;
+            }
+            finally
+            {
+                converting = false;
+                selectFilesButton.IsEnabled = true;
+                selectFoldersButton.IsEnabled = true;
+                clearFilesButton.IsEnabled = true;
+                setDestinationButton.IsEnabled = true;
+                convertButton.IsEnabled = true;
+                formatSelector.IsEnabled = true;
             }
 
             _ = MessageBox.Show(anyErrors ? "Some conversions failed" : "All conversions have completed.",
                     "Complete", MessageBoxButton.OK,
                     anyErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
-
-            converting = false;
-            selectFilesButton.IsEnabled = true;
-            selectFoldersButton.IsEnabled = true;
-            clearFilesButton.IsEnabled = true;
-            setDestinationButton.IsEnabled = true;
-            convertButton.IsEnabled = true;
-            formatSelector.IsEnabled = true;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -242,6 +249,11 @@ namespace QOI.Viewer
                 }
                 AddFiles(Directory.GetFiles(folder, "*", SearchOption.AllDirectories));
             }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            cancellationTokenSource.Cancel();
         }
     }
 }
