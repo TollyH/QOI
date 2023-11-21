@@ -373,7 +373,7 @@ namespace QOI.Viewer
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop) ?? Array.Empty<string>());
                 LoadImage(files[0]);
             }
         }

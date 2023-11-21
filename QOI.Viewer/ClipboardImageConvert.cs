@@ -16,12 +16,15 @@ namespace QOI.Viewer
         {
             if (Clipboard.ContainsImage())
             {
-                IDataObject clipboardData = Clipboard.GetDataObject();
-                if (clipboardData != null)
+                IDataObject? clipboardData = Clipboard.GetDataObject();
+                if (clipboardData is not null)
                 {
                     if (clipboardData.GetDataPresent(DataFormats.Bitmap))
                     {
-                        Bitmap bitmap = (Bitmap)clipboardData.GetData(DataFormats.Bitmap);
+                        if (clipboardData.GetData(DataFormats.Bitmap) is not Bitmap bitmap)
+                        {
+                            return null;
+                        }
                         IntPtr hBitmap = bitmap.GetHbitmap();
                         try
                         {
