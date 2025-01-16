@@ -8,6 +8,7 @@
         mc:Ignorable="d"
         Title="QOI Image Viewer" WindowState="Maximized"
         Drop="Window_Drop" AllowDrop="True" KeyDown="Window_KeyDown"
+        UseLayoutRounding="True"
         d:Height="600" d:Width="1000">
     <Grid>
         <Grid.RowDefinitions>
