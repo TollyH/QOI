@@ -1,0 +1,12 @@
+﻿<Window x:Class="QOI.Viewer.IndexDebugWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QOI.Viewer"
+        mc:Ignorable="d"
+        Title="Index Viewer" Height="325" Width="310" WindowStyle="ToolWindow">
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <WrapPanel x:Name="colorsPanel"/>
+    </Grid>
+</Window>

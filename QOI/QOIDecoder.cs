@@ -31,6 +31,19 @@ namespace QOI
         /// </summary>
         public int PixelDataLength { get; private set; } = 0;
 
+        /// <summary>
+        /// Whether to store the full state of the index for every decoded pixel.
+        /// Will impact performance if set to <see langword="true"/>.
+        /// </summary>
+        public bool StoreFullIndexHistory { get; set; } = false;
+
+        /// <summary>
+        /// The state history of the index for every decoded pixel in the last decoded image.
+        /// Only updated if <see cref="StoreFullIndexHistory"/> is <see langword="true"/>.
+        /// Will be <see langword="null"/> if no images have been decoded while this is the case.
+        /// </summary>
+        public Pixel[][]? IndexHistory { get; private set; } = null;
+
         public static readonly ImmutableDictionary<ChunkType, Pixel> DebugModeColors = new Dictionary<ChunkType, Pixel>()
         {
             { ChunkType.QOI_OP_RGB, new Pixel(255, 0, 0) },
@@ -117,6 +130,16 @@ namespace QOI
             Pixel previousPixel = new(0, 0, 0, 255);
             Pixel[] colorArray = new Pixel[64];
 
+            if (StoreFullIndexHistory)
+            {
+                IndexHistory = new Pixel[pixelCount][];
+
+                for (int i = 0; i < pixelCount; i++)
+                {
+                    IndexHistory[i] = new Pixel[64];
+                }
+            }
+
             int pixelIndex = 0;
             int dataIndex = 0;
             for (; dataIndex < data.Length && pixelIndex < pixelCount; dataIndex++, pixelIndex++)
@@ -171,6 +194,11 @@ namespace QOI
                                     int runLength = (0b00111111 & tagByte) + 1;
                                     for (int i = 0; i < runLength; i++)
                                     {
+                                        if (StoreFullIndexHistory)
+                                        {
+                                            colorArray.CopyTo(IndexHistory![pixelIndex], 0);
+                                        }
+
                                         decodedPixels[pixelIndex++] = previousPixel;
                                     }
                                     pixelIndex--;
@@ -182,6 +210,11 @@ namespace QOI
                 }
                 previousPixel = decodedPixels[pixelIndex];
                 colorArray[previousPixel.ColorHash()] = previousPixel;
+
+                if (StoreFullIndexHistory)
+                {
+                    colorArray.CopyTo(IndexHistory![pixelIndex], 0);
+                }
             }
 
             PixelDataLength = dataIndex;

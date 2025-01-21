@@ -38,6 +38,10 @@ namespace QOI.Viewer
 
         private byte[] trailingData = Array.Empty<byte>();
 
+        private IndexDebugWindow? openIndexWindow = null;
+
+        private Pixel[][]? indexHistory = null;
+
         private static readonly Dictionary<ChunkType, string> debugModeColors = new()
         {
             { ChunkType.QOI_OP_RGB, "Red" },
@@ -101,7 +105,8 @@ namespace QOI.Viewer
                         QOIDecoder decoder = new()
                         {
                             RequireEndTag = false,
-                            DebugMode = configDebugMode.IsChecked
+                            DebugMode = configDebugMode.IsChecked,
+                            StoreFullIndexHistory = openIndexWindow is not null
                         };
                         Stopwatch decodeStopwatch = Stopwatch.StartNew();
                         QOIImage newQOIImage = decoder.DecodeImageFile(path);
@@ -133,6 +138,8 @@ namespace QOI.Viewer
                         }
                         statsLabelChunkStats.Text += $"{Environment.NewLine}Total: {decoder.ChunksDecoded.Values.Sum():n0}";
 
+                        indexHistory = decoder.IndexHistory;
+
                         if (!decoder.EndTagWasPresent)
                         {
                             _ = MessageBox.Show("End tag was missing from loaded file.",
@@ -145,6 +152,8 @@ namespace QOI.Viewer
                     case "jpeg":
                         ChangeImageSource(new BitmapImage(new Uri(path)));
                         ShowEmptyStats();
+
+                        indexHistory = null;
                         break;
                     default:
                         _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
@@ -354,6 +363,37 @@ namespace QOI.Viewer
             imageView.Height = source?.PixelHeight ?? double.NaN;
         }
 
+        private void OpenIndexView()
+        {
+            if (openIndexWindow is null)
+            {
+                openIndexWindow = new IndexDebugWindow(this);
+                openIndexWindow.Closed += openIndexWindow_Closed;
+
+                openIndexWindow.Show();
+
+                Reload();
+            }
+            else
+            {
+                openIndexWindow.Focus();
+            }
+        }
+
+        private void UpdateIndexViewFromMousePosition()
+        {
+            if (openIndexWindow is not null && indexHistory is not null)
+            {
+                Point mousePos = Mouse.GetPosition(imageView);
+                int clickedPixelIndex = (int)((int)mousePos.Y * imageView.Width + mousePos.X);
+
+                if (clickedPixelIndex < indexHistory.Length)
+                {
+                    openIndexWindow.SetColors(indexHistory[clickedPixelIndex]);
+                }
+            }
+        }
+
         private void OpenItem_Click(object sender, RoutedEventArgs e)
         {
             PromptFileOpen();
@@ -455,6 +495,9 @@ namespace QOI.Viewer
                 case Key.A:
                     ZoomActualSize();
                     break;
+                case Key.I:
+                    OpenIndexView();
+                    break;
             }
         }
 
@@ -509,6 +552,29 @@ namespace QOI.Viewer
         private void ActualSizeItem_Click(object sender, RoutedEventArgs e)
         {
             ZoomActualSize();
+        }
+
+        private void imageView_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            UpdateIndexViewFromMousePosition();
+        }
+
+        private void imageView_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                UpdateIndexViewFromMousePosition();
+            }
+        }
+
+        private void IndexViewerItem_Click(object sender, RoutedEventArgs e)
+        {
+            OpenIndexView();
+        }
+
+        private void openIndexWindow_Closed(object? sender, EventArgs e)
+        {
+            openIndexWindow = null;
         }
     }
 }
