@@ -55,11 +55,16 @@
             </MenuItem>
         </Menu>
         <ScrollViewer x:Name="imageScroll" Grid.Column="0" Grid.Row="1" Margin="0,0,5,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" SizeChanged="imageScroll_SizeChanged">
-            <Image x:Name="imageView" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center" MouseDown="imageView_MouseDown" MouseMove="imageView_MouseMove">
-                <Image.LayoutTransform>
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.LayoutTransform>
                     <ScaleTransform x:Name="imageViewScale"/>
-                </Image.LayoutTransform>
-            </Image>
+                </Grid.LayoutTransform>
+                <Image x:Name="imageView" RenderOptions.BitmapScalingMode="HighQuality" MouseDown="imageView_MouseDown" MouseMove="imageView_MouseMove"/>
+                <Canvas Width="{Binding ActualWidth, ElementName=imageView}" Height="{Binding ActualHeight, ElementName=imageView}" IsHitTestVisible="False">
+                    <Rectangle x:Name="selectedIndexPixelOutline" StrokeThickness="0.1" Stroke="Magenta" Fill="#3F00FFFF" Width="1" Height="1" Visibility="Collapsed" IsHitTestVisible="False"/>
+                    <Rectangle x:Name="lastUpdatedIndexPixelOutline" StrokeThickness="0.1" Stroke="Cyan" Fill="#3FFF00FF" Width="1" Height="1" Visibility="Collapsed" IsHitTestVisible="False"/>
+                </Canvas>
+            </Grid>
         </ScrollViewer>
         <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8" Focusable="False"/>
         <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#FFF0F0F0">

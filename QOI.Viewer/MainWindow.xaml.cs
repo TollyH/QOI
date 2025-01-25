@@ -40,7 +40,7 @@ namespace QOI.Viewer
 
         private IndexDebugWindow? openIndexWindow = null;
 
-        private Pixel[][]? indexHistory = null;
+        private QOIDecoder.IndexHistoryItem[]?[]? indexHistory = null;
 
         private static readonly Dictionary<ChunkType, string> debugModeColors = new()
         {
@@ -59,7 +59,7 @@ namespace QOI.Viewer
             string[] args = Environment.GetCommandLineArgs();
 
             configDebugMode.IsChecked = args.Contains("--debug");
-            args = args.Skip(1).Where(x => !x.StartsWith("-")).ToArray();
+            args = args.Skip(1).Where(x => !x.StartsWith('-')).ToArray();
 
             if (args.Length == 1)
             {
@@ -369,6 +369,7 @@ namespace QOI.Viewer
             {
                 openIndexWindow = new IndexDebugWindow(this);
                 openIndexWindow.Closed += openIndexWindow_Closed;
+                openIndexWindow.IndexSelectionChanged += openIndexWindow_IndexSelectionChanged;
 
                 openIndexWindow.Show();
 
@@ -389,7 +390,22 @@ namespace QOI.Viewer
 
                 if (clickedPixelIndex < indexHistory.Length)
                 {
-                    openIndexWindow.SetColors(indexHistory[clickedPixelIndex]);
+                    QOIDecoder.IndexHistoryItem[]? history;
+                    // The history item will be null if the pixel is in the extended part of a run.
+                    // Find the last non-null history item (i.e. the item for the start of the run).
+                    while ((history = indexHistory[clickedPixelIndex]) is null)
+                    {
+                        clickedPixelIndex--;
+                        if (clickedPixelIndex < 0)
+                        {
+                            return;
+                        }
+                    }
+                    openIndexWindow.SetColors(history);
+
+                    selectedIndexPixelOutline.Visibility = Visibility.Visible;
+                    Canvas.SetLeft(selectedIndexPixelOutline, clickedPixelIndex % imageView.Width);
+                    Canvas.SetTop(selectedIndexPixelOutline, clickedPixelIndex / imageView.Width);
                 }
             }
         }
@@ -575,6 +591,24 @@ namespace QOI.Viewer
         private void openIndexWindow_Closed(object? sender, EventArgs e)
         {
             openIndexWindow = null;
+
+            selectedIndexPixelOutline.Visibility = Visibility.Collapsed;
+            lastUpdatedIndexPixelOutline.Visibility = Visibility.Collapsed;
+        }
+
+        private void openIndexWindow_IndexSelectionChanged(object? sender, EventArgs e)
+        {
+            int? index = openIndexWindow?.SelectedItemLastEditedByIndex;
+
+            if (index is null)
+            {
+                lastUpdatedIndexPixelOutline.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            lastUpdatedIndexPixelOutline.Visibility = Visibility.Visible;
+            Canvas.SetLeft(lastUpdatedIndexPixelOutline, (int)(index.Value % imageView.Width));
+            Canvas.SetTop(lastUpdatedIndexPixelOutline, (int)(index.Value / imageView.Width));
         }
     }
 }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QOI.Viewer"
         mc:Ignorable="d"
-        Title="Index Viewer" Height="325" Width="310" WindowStyle="ToolWindow">
+        Title="Index Viewer" Height="325" Width="310" WindowStyle="ToolWindow" MouseDown="Window_MouseDown">
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
         <WrapPanel x:Name="colorsPanel"/>
     </Grid>

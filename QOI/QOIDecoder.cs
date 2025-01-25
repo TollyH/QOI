@@ -41,8 +41,10 @@ namespace QOI
         /// The state history of the index for every decoded pixel in the last decoded image.
         /// Only updated if <see cref="StoreFullIndexHistory"/> is <see langword="true"/>.
         /// Will be <see langword="null"/> if no images have been decoded while this is the case.
+        /// The second pixel onwards of a RUN chunk will be <see langword="null"/> within the array.
+        /// To get the history items for these pixels, find the previous non-null value.
         /// </summary>
-        public Pixel[][]? IndexHistory { get; private set; } = null;
+        public IndexHistoryItem[]?[]? IndexHistory { get; private set; } = null;
 
         public static readonly ImmutableDictionary<ChunkType, Pixel> DebugModeColors = new Dictionary<ChunkType, Pixel>()
         {
@@ -130,14 +132,11 @@ namespace QOI
             Pixel previousPixel = new(0, 0, 0, 255);
             Pixel[] colorArray = new Pixel[64];
 
+            int[]? colorArrayLastModifyingIndex = null;
             if (StoreFullIndexHistory)
             {
-                IndexHistory = new Pixel[pixelCount][];
-
-                for (int i = 0; i < pixelCount; i++)
-                {
-                    IndexHistory[i] = new Pixel[64];
-                }
+                IndexHistory = new IndexHistoryItem[pixelCount][];
+                colorArrayLastModifyingIndex = new int[64];
             }
 
             int pixelIndex = 0;
@@ -194,11 +193,6 @@ namespace QOI
                                     int runLength = (0b00111111 & tagByte) + 1;
                                     for (int i = 0; i < runLength; i++)
                                     {
-                                        if (StoreFullIndexHistory)
-                                        {
-                                            colorArray.CopyTo(IndexHistory![pixelIndex], 0);
-                                        }
-
                                         decodedPixels[pixelIndex++] = previousPixel;
                                     }
                                     pixelIndex--;
@@ -209,12 +203,26 @@ namespace QOI
                         break;
                 }
                 previousPixel = decodedPixels[pixelIndex];
-                colorArray[previousPixel.ColorHash()] = previousPixel;
+                int pixelHash = previousPixel.ColorHash();
 
                 if (StoreFullIndexHistory)
                 {
-                    colorArray.CopyTo(IndexHistory![pixelIndex], 0);
+                    int startPixelIndex = pixelIndex;
+                    // Store the first pixel of a run, not the last
+                    if (tagByte is not (byte)ChunkType.QOI_OP_RGB and not (byte)ChunkType.QOI_OP_RGBA
+                        && (tagByte & 0b11000000) == (byte)ChunkType.QOI_OP_RUN)
+                    {
+                        startPixelIndex -= 0b00111111 & tagByte;
+                    }
+                    if (colorArray[pixelHash] != previousPixel)
+                    {
+                        colorArrayLastModifyingIndex![pixelHash] = startPixelIndex;
+                    }
+                    IndexHistory![startPixelIndex] = colorArray.Select(
+                        (p, i) => new IndexHistoryItem(p, colorArrayLastModifyingIndex![i])).ToArray();
                 }
+
+                colorArray[pixelHash] = previousPixel;
             }
 
             PixelDataLength = dataIndex;
@@ -349,6 +357,12 @@ namespace QOI
         public Pixel[] GenerateDebugPixels(Span<byte> data, uint pixelCount)
         {
             return GenerateDebugPixels(data, pixelCount, out _);
+        }
+
+        public readonly struct IndexHistoryItem(Pixel pixelColor, int lastModifyingPixelIndex)
+        {
+            public readonly Pixel PixelColor = pixelColor;
+            public readonly int LastModifyingPixelIndex = lastModifyingPixelIndex;
         }
     }
 }
