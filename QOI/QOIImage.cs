@@ -1,5 +1,8 @@
-﻿namespace QOI
+﻿using System.Runtime.InteropServices;
+
+namespace QOI
 {
+    // ReSharper disable InconsistentNaming
     public enum ChannelType : byte
     {
         RGB = 3,
@@ -21,7 +24,9 @@
         QOI_OP_LUMA = 0b10000000,
         QOI_OP_RUN = 0b11000000
     }
+    // ReSharper restore InconsistentNaming
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct Pixel(byte red, byte green, byte blue, byte alpha = 255) : IEquatable<Pixel>
     {
         public readonly byte Red = red;
@@ -73,17 +78,16 @@
         public ChannelType Channels { get; set; }
         public ColorspaceType Colorspace { get; set; }
 
-        private Pixel[] _pixels;
         public Pixel[] Pixels
         {
-            get => _pixels;
+            get;
             set
             {
                 if (value.Length != Width * Height)
                 {
                     throw new ArgumentException($"Pixels array is an invalid size. Expected {Width * Height} pixels, got {value.Length}.");
                 }
-                _pixels = value;
+                field = value;
             }
         }
         public byte[] TrailingData { get; set; } = Array.Empty<byte>();
@@ -95,7 +99,7 @@
             Channels = channels;
             Colorspace = colorspace;
 
-            _pixels = new Pixel[Width * Height];
+            Pixels = new Pixel[Width * Height];
         }
 
         public QOIImage(uint width, uint height, ChannelType channels, ColorspaceType colorspace, Pixel[] pixels) : this(width, height, channels, colorspace)
@@ -105,7 +109,7 @@
                 throw new ArgumentException($"Pixels array is an invalid size. Expected {width * height} pixels, got {pixels.Length}.");
             }
 
-            _pixels = pixels;
+            Pixels = pixels;
         }
     }
 }

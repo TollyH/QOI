@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="QOI.Viewer/QOI.Viewer.csproj" />
+  <Project Path="QOI/QOI.csproj" />
+</Solution>

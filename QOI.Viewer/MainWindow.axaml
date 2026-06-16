@@ -1,0 +1,82 @@
+﻿<Window x:Class="QOI.Viewer.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:qoi="using:QOI"
+        mc:Ignorable="d"
+        Title="QOI Image Viewer" WindowState="Maximized"
+        KeyDown="Window_KeyDown"
+        UseLayoutRounding="True"
+        d:Height="600" d:Width="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="0" d:Width="200"/>
+        </Grid.ColumnDefinitions>
+        <Menu x:Name="topMenu" Grid.Row="0" Grid.ColumnSpan="2" VerticalAlignment="Top">
+            <MenuItem Header="_File" SubmenuOpened="FileMenuItem_SubmenuOpened">
+                <MenuItem Header="_Open" Click="OpenItem_Click" InputGesture="Ctrl+O"/>
+                <MenuItem x:Name="openClipboardItem" Header="Open from _clipboard" Click="openClipboardItem_Click" InputGesture="Ctrl+V"/>
+                <MenuItem x:Name="copyItem" Header="_Copy" Click="copyItem_Click" InputGesture="Ctrl+C"/>
+                <MenuItem x:Name="saveItem" Header="_Save as" Click="saveItem_Click" InputGesture="Ctrl+S"/>
+                <Separator/>
+                <MenuItem Header="_Bulk converter..." Click="BulkConverterItem_Click" InputGesture="Ctrl+B"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Fit image" Click="FitImageItem_Click" InputGesture="F"/>
+                <MenuItem Header="Zoom to _actual size" Click="ActualSizeItem_Click" InputGesture="A"/>
+                <Separator/>
+                <MenuItem x:Name="configNearestNeighbor" Header="_Preserve Pixel Edges (Nearest Neighbor)" InputGesture="N" ToggleType="CheckBox" PropertyChanged="configNearestNeighbor_Checked"/>
+                <Separator/>
+                <MenuItem x:Name="configDebugMode" Header="_Debug Mode (Color chunk types)" InputGesture="D" ToggleType="CheckBox" Click="ReloadOnClick"/>
+                <MenuItem Header="Open _Index Debug Viewer" InputGesture="I" Click="IndexViewerItem_Click"/>
+                <Separator/>
+                <MenuItem x:Name="chunkHideMenu" Header="_Hide Chunk Types">
+                    <MenuItem x:Name="configChunkHideRGB" Header="_Hide RGB Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGB}"/>
+                    <MenuItem x:Name="configChunkHideRGBA" Header="Hide _RGBA Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RGBA}"/>
+                    <MenuItem x:Name="configChunkHideINDEX" Header="Hide _INDEX Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_INDEX}"/>
+                    <MenuItem x:Name="configChunkHideDIFF" Header="Hide _DIFF Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_DIFF}"/>
+                    <MenuItem x:Name="configChunkHideLUMA" Header="Hide _LUMA Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_LUMA}"/>
+                    <MenuItem x:Name="configChunkHideRUN" Header="Hide RUN _Chunks" ToggleType="CheckBox" Click="ReloadOnClick" Tag="{x:Static qoi:ChunkType.QOI_OP_RUN}"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Encoder">
+                <MenuItem x:Name="configNoEncodeINDEX" Header="Don't use _INDEX chunks" ToggleType="CheckBox"/>
+                <MenuItem x:Name="configNoEncodeDIFF" Header="Don't use _DIFF chunks" ToggleType="CheckBox"/>
+                <MenuItem x:Name="configNoEncodeLUMA" Header="Don't use _LUMA chunks" ToggleType="CheckBox"/>
+                <MenuItem x:Name="configNoEncodeRUN" Header="Don't use _RUN chunks" ToggleType="CheckBox"/>
+                <MenuItem x:Name="configNoEncodeRGB" Header="_Don't use RGB chunks" ToggleType="CheckBox"/>
+            </MenuItem>
+        </Menu>
+        <ScrollViewer x:Name="imageScroll" Grid.Column="0" Grid.Row="1" Margin="0,0,5,0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Focusable="False" PointerWheelChanged="ScrollViewer_PointerWheelChanged" SizeChanged="imageScroll_SizeChanged">
+            <LayoutTransformControl x:Name="imageViewScale" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Image x:Name="imageView" RenderOptions.BitmapInterpolationMode="HighQuality" PointerPressed="imageView_PointerPressed" PointerMoved="imageView_PointerMoved"/>
+                    <Canvas Width="{Binding Bounds.Width, ElementName=imageView}" Height="{Binding Bounds.Height, ElementName=imageView}" IsHitTestVisible="False">
+                        <Rectangle x:Name="selectedIndexPixelOutline" StrokeThickness="0.1" Stroke="Magenta" Fill="#3F00FFFF" Width="1" Height="1" IsVisible="False" IsHitTestVisible="False"/>
+                        <Rectangle x:Name="lastUpdatedIndexPixelOutline" StrokeThickness="0.1" Stroke="Cyan" Fill="#3FFF00FF" Width="1" Height="1" IsVisible="False" IsHitTestVisible="False"/>
+                    </Canvas>
+                </Grid>
+            </LayoutTransformControl>
+        </ScrollViewer>
+        <GridSplitter x:Name="gridSplit" Grid.Row="1" Grid.Column="0" VerticalAlignment="Stretch" HorizontalAlignment="Right" ShowsPreview="True" Width="5" Background="#FFD8D8D8" Focusable="False"/>
+        <StackPanel Orientation="Vertical" Grid.Row="1" Grid.Column="1" Background="#30F0F0F0">
+            <TextBlock x:Name="statsLabelResolution" Margin="5" Padding="5" FontSize="14" Text="Resolution:"/>
+            <TextBlock x:Name="statsLabelChannels" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Channels:"/>
+            <TextBlock x:Name="statsLabelColorspace" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Colorspace:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelTimeDecoding" Margin="5" Padding="5" FontSize="14" Text="Time to Decode:"/>
+            <TextBlock x:Name="statsLabelTimeConverting" Margin="5,0,5,5" Padding="5" FontSize="14" Text="Time to Convert:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelCompression" Margin="5" Padding="5" FontSize="14" Text="Compression:"/>
+            <TextBlock x:Name="statsLabelTrailingData" Margin="5" Padding="5,0,5,5" FontSize="14" Text="Trailing Data Length:"/>
+            <Separator/>
+            <TextBlock x:Name="statsLabelChunkStats" Margin="5" Padding="5" FontSize="14" Text="Chunk Counts:"/>
+        </StackPanel>
+    </Grid>
+</Window>

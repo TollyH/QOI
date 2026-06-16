@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Shapes;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
+using Avalonia.Input;
+using Avalonia.Media;
 
 namespace QOI.Viewer
 {
@@ -11,16 +13,15 @@ namespace QOI.Viewer
     /// </summary>
     public partial class IndexDebugWindow : Window
     {
-        private int? _selectedIndexPosition;
         public int? SelectedIndexPosition
         {
-            get => _selectedIndexPosition;
+            get;
             private set
             {
-                if (_selectedIndexPosition is not null)
+                if (field is not null)
                 {
                     // Reset outline of any existing selection
-                    colorRectangles[_selectedIndexPosition.Value].Stroke = Brushes.DimGray;
+                    colorRectangles[field.Value].Stroke = Brushes.DimGray;
                 }
 
                 if (value is not null)
@@ -29,7 +30,7 @@ namespace QOI.Viewer
                     colorRectangles[value.Value].Stroke = Brushes.Red;
                 }
 
-                _selectedIndexPosition = value;
+                field = value;
 
                 IndexSelectionChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -43,7 +44,7 @@ namespace QOI.Viewer
 
         private readonly Rectangle[] colorRectangles = new Rectangle[64];
 
-        public IndexDebugWindow(Window owner)
+        public IndexDebugWindow(Window? owner)
         {
             InitializeComponent();
 
@@ -58,13 +59,14 @@ namespace QOI.Viewer
                     StrokeThickness = 1,
                     Stroke = Brushes.DimGray,
                     Fill = Brushes.Black,
-                    Margin = new Thickness(1),
-                    ToolTip = "Click a pixel in the main image window to see the index state after that pixel was decoded"
+                    Margin = new Thickness(1)
                 };
+                ToolTip.SetTip(colorRectangles[i],
+                    "Click a pixel in the main image window to see the index state after that pixel was decoded");
 
                 // Create a copy of the index variable so that its value is retained in the anonymous function below
                 int position = i;
-                colorRectangles[i].MouseDown += (_, e) =>
+                colorRectangles[i].PointerPressed += (_, e) =>
                 {
                     SelectPosition(position);
                     e.Handled = true;
@@ -73,6 +75,8 @@ namespace QOI.Viewer
                 colorsPanel.Children.Add(colorRectangles[i]);
             }
         }
+        
+        public IndexDebugWindow() : this(null) { }
 
         /// <summary>
         /// Set the colors displayed by the window. There must be exactly 64 elements in the given enumerable.
@@ -94,8 +98,9 @@ namespace QOI.Viewer
 
                 colorRectangles[i].Fill = new SolidColorBrush(
                     Color.FromArgb(item.PixelColor.Alpha, item.PixelColor.Red, item.PixelColor.Green, item.PixelColor.Blue));
-                colorRectangles[i].ToolTip = $"R: {item.PixelColor.Red}, G: {item.PixelColor.Green}, B: {item.PixelColor.Blue}, A: {item.PixelColor.Alpha}" +
-                    $"\nLast updated by pixel at index {item.LastModifyingPixelIndex}";
+                ToolTip.SetTip(colorRectangles[i],
+                    $"R: {item.PixelColor.Red}, G: {item.PixelColor.Green}, B: {item.PixelColor.Blue}, A: {item.PixelColor.Alpha}" +
+                    $"\nLast updated by pixel at index {item.LastModifyingPixelIndex}");
                 colorRectangles[i].Tag = item.LastModifyingPixelIndex;
             }
         }
@@ -105,7 +110,7 @@ namespace QOI.Viewer
             SelectedIndexPosition = position;
         }
 
-        private void Window_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void Window_PointerPressed(object sender, PointerPressedEventArgs e)
         {
             SelectedIndexPosition = null;
         }

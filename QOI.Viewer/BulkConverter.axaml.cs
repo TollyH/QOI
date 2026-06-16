@@ -1,20 +1,20 @@
-﻿using Microsoft.Win32;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media.Imaging;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using SkiaSharp;
 
 namespace QOI.Viewer
 {
     /// <summary>
     /// Interaction logic for BulkConverter.xaml
     /// </summary>
-    public partial class BulkConverter : Window
+    public partial class BulkConverter : Window, IDisposable
     {
         private readonly List<string> filesToConvert = new();
         private string destination = "";
@@ -27,6 +27,17 @@ namespace QOI.Viewer
         {
             cancellationToken = cancellationTokenSource.Token;
             InitializeComponent();
+        }
+
+        ~BulkConverter()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            cancellationTokenSource.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public void AddFiles(IEnumerable<string> files)
@@ -43,7 +54,7 @@ namespace QOI.Viewer
                     continue;
                 }
                 filesToConvert.Add(file);
-                _ = filesPanel.Children.Add(new FileProgress()
+                filesPanel.Children.Add(new FileProgress()
                 {
                     Filename = Path.GetFileName(file),
                     CurrentState = FileProgress.State.None
@@ -54,40 +65,35 @@ namespace QOI.Viewer
             }
         }
 
-        private void selectFilesButton_Click(object sender, RoutedEventArgs e)
+        private async void selectFilesButton_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog fileDialog = new()
+            IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
             {
-                Multiselect = true,
-                CheckFileExists = true,
-                Filter = "All Supported Types|*.qoi;*.png;*.jpg;*.jpeg" +
-                "|QOI Image File|*.qoi" +
-                "|PNG Image File|*.png" +
-                "|JPEG Image File|*.jpg;*.jpeg"
-            };
+                AllowMultiple = true,
+                FileTypeFilter = MainWindow.selectableFiles
+            });
 
-            if (!fileDialog.ShowDialog(this) ?? true)
+            if (files.Count == 0)
             {
                 return;
             }
 
-            AddFiles(fileDialog.FileNames);
+            AddFiles(files.Select(f => f.Path.LocalPath));
         }
 
-        private void setDestinationButton_Click(object sender, RoutedEventArgs e)
+        private async void setDestinationButton_Click(object sender, RoutedEventArgs e)
         {
-            CommonOpenFileDialog folderDialog = new()
+            IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                IsFolderPicker = true,
-                EnsurePathExists = true
-            };
+                AllowMultiple = false
+            });
 
-            if (folderDialog.ShowDialog(this) != CommonFileDialogResult.Ok)
+            if (folders.Count == 0)
             {
                 return;
             }
 
-            destination = folderDialog.FileName;
+            destination = folders[0].Path.LocalPath;
             outputLabel.Text = destination;
         }
 
@@ -99,8 +105,8 @@ namespace QOI.Viewer
             }
             if (!Directory.Exists(destination))
             {
-                _ = MessageBox.Show("The destination folder does not exist.",
-                    "Destination Not Found", MessageBoxButton.OK, MessageBoxImage.Error);
+                new MessageBox("The destination folder does not exist.",
+                    "Destination Not Found", MessageBoxImage.Error).Show();
                 return;
             }
 
@@ -138,9 +144,9 @@ namespace QOI.Viewer
                                 FileProgress.State.Processing);
                             string destinationFile = Path.Join(destination,
                                 Path.ChangeExtension(Path.GetFileName(file), targetType));
-                            BitmapImage source = Path.GetExtension(file).ToLower() == ".qoi"
-                                ? new QOIDecoder().DecodeImageFile(file).ConvertToBitmapImage()
-                                : new(new Uri(file));
+                            SKBitmap source = Path.GetExtension(file).Equals(".qoi", StringComparison.OrdinalIgnoreCase)
+                                ? new QOIDecoder().DecodeImageFile(file).ConvertToSKBitmapImage()
+                                : SKBitmap.Decode(file);
                             switch (targetType)
                             {
                                 case "qoi":
@@ -151,18 +157,14 @@ namespace QOI.Viewer
                                 }
                                 case "jpg":
                                 {
-                                    JpegBitmapEncoder encoder = new();
-                                    encoder.Frames.Add(BitmapFrame.Create(source));
                                     await using FileStream fileStream = new(destinationFile, FileMode.Create);
-                                    encoder.Save(fileStream);
+                                    source.Encode(fileStream, SKEncodedImageFormat.Jpeg, 100);
                                     break;
                                 }
                                 case "png":
                                 {
-                                    PngBitmapEncoder encoder = new();
-                                    encoder.Frames.Add(BitmapFrame.Create(source));
                                     await using FileStream fileStream = new(destinationFile, FileMode.Create);
-                                    encoder.Save(fileStream);
+                                    source.Encode(fileStream, SKEncodedImageFormat.Png, 100);
                                     break;
                                 }
                             }
@@ -204,18 +206,8 @@ namespace QOI.Viewer
                 formatSelector.IsEnabled = true;
             }
 
-            _ = MessageBox.Show(anyErrors ? "Some conversions failed" : "All conversions have completed.",
-                    "Complete", MessageBoxButton.OK,
-                    anyErrors ? MessageBoxImage.Warning : MessageBoxImage.Information);
-        }
-
-        private void Window_Drop(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop) ?? Array.Empty<string>());
-                AddFiles(files);
-            }
+            new MessageBox(anyErrors ? "Some conversions failed" : "All conversions have completed.",
+                "Complete", anyErrors ? MessageBoxImage.Warning : MessageBoxImage.Information).Show();
         }
 
         private void clearFilesButton_Click(object sender, RoutedEventArgs e)
@@ -227,21 +219,19 @@ namespace QOI.Viewer
             conversionProgress.Maximum = 1;
         }
 
-        private void selectFoldersButton_Click(object sender, RoutedEventArgs e)
+        private async void selectFoldersButton_Click(object sender, RoutedEventArgs e)
         {
-            CommonOpenFileDialog folderDialog = new()
+            IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
             {
-                IsFolderPicker = true,
-                EnsurePathExists = true,
-                Multiselect = true
-            };
+                AllowMultiple = true
+            });
 
-            if (folderDialog.ShowDialog(this) != CommonFileDialogResult.Ok)
+            if (folders.Count == 0)
             {
                 return;
             }
 
-            foreach (string folder in folderDialog.FileNames)
+            foreach (string folder in folders.Select(f => f.Path.LocalPath))
             {
                 if (!Directory.Exists(folder))
                 {
@@ -251,7 +241,7 @@ namespace QOI.Viewer
             }
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void Window_Closing(object sender, WindowClosingEventArgs e)
         {
             cancellationTokenSource.Cancel();
         }

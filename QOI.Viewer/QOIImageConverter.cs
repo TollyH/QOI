@@ -1,26 +1,27 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Windows.Media.Imaging;
+﻿using System;
+using System.Collections.Generic;
+using Avalonia;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using SkiaSharp;
 
 namespace QOI.Viewer
 {
     public static class QOIImageConverter
     {
-        public static BitmapImage ConvertToBitmapImage(this QOIImage image)
+        public static SKBitmap ConvertToSKBitmapImage(this QOIImage image)
         {
             int width = (int)image.Width;
             int height = (int)image.Height;
-            using Bitmap bitmap = new(width, height, PixelFormat.Format32bppArgb);
-            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            SKBitmap bitmap = new(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul));
 
             // Copy pixel array to new Bitmap object
+            IntPtr bmpData = bitmap.GetPixels();
             unsafe
             {
                 for (int y = 0; y < height; y++)
                 {
-                    byte* row = (byte*)bmpData.Scan0 + (y * bmpData.Stride);
+                    byte* row = (byte*)bmpData + (y * bitmap.RowBytes);
                     for (int x = 0; x < width; x++)
                     {
                         Pixel pixel = image.Pixels[(y * width) + x];
@@ -32,38 +33,53 @@ namespace QOI.Viewer
                 }
             }
 
-            bitmap.UnlockBits(bmpData);
-
-            // Convert Bitmap to BitmapImage for use with WPF
-            using MemoryStream stream = new();
-            // If the image has transparency, we have to use PNG at the cost of performance,
-            // as BMP doesn't support transparency in GDI+.
-            bitmap.Save(stream, image.Channels == ChannelType.RGBA ? ImageFormat.Png : ImageFormat.Bmp);
-
-            BitmapImage bitmapImage = new();
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.StreamSource = stream;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze();
-            return bitmapImage;
+            return bitmap;
         }
-
-        public static BitmapImage ConvertToBitmapImageFilterChunks(this QOIImage image,
-            Pixel[] debugPixels, IReadOnlySet<ChunkType> excludeChunks)
+        
+        public static WriteableBitmap ConvertToAvaloniaBitmapImage(this QOIImage image)
         {
             int width = (int)image.Width;
             int height = (int)image.Height;
-            using Bitmap bitmap = new(width, height, PixelFormat.Format32bppArgb);
-            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-            Pixel continuedRun = new(255, 255, 255);
+            WriteableBitmap bitmap = new(
+                new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
 
             // Copy pixel array to new Bitmap object
+            using ILockedFramebuffer buffer = bitmap.Lock();
             unsafe
             {
                 for (int y = 0; y < height; y++)
                 {
-                    byte* row = (byte*)bmpData.Scan0 + (y * bmpData.Stride);
+                    byte* row = (byte*)buffer.Address + (y * buffer.RowBytes);
+                    for (int x = 0; x < width; x++)
+                    {
+                        Pixel pixel = image.Pixels[(y * width) + x];
+                        row[x * 4] = pixel.Blue;
+                        row[(x * 4) + 1] = pixel.Green;
+                        row[(x * 4) + 2] = pixel.Red;
+                        row[(x * 4) + 3] = pixel.Alpha;
+                    }
+                }
+            }
+
+            return bitmap;
+        }
+
+        public static WriteableBitmap ConvertToAvaloniaBitmapImageFilterChunks(this QOIImage image,
+            Pixel[] debugPixels, IReadOnlySet<ChunkType> excludeChunks)
+        {
+            int width = (int)image.Width;
+            int height = (int)image.Height;
+            WriteableBitmap bitmap = new(
+                new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+            Pixel continuedRun = new(255, 255, 255);
+
+            // Copy pixel array to new Bitmap object
+            using ILockedFramebuffer buffer = bitmap.Lock();
+            unsafe
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    byte* row = (byte*)buffer.Address + (y * buffer.RowBytes);
                     for (int x = 0; x < width; x++)
                     {
                         Pixel debugPixel = debugPixels[(y * width) + x];
@@ -88,63 +104,67 @@ namespace QOI.Viewer
                 }
             }
 
-            bitmap.UnlockBits(bmpData);
-
-            // Convert Bitmap to BitmapImage for use with WPF
-            using MemoryStream stream = new();
-            // If the image has transparency, we have to use PNG at the cost of performance,
-            // as BMP doesn't support transparency in GDI+.
-            bitmap.Save(stream, image.Channels == ChannelType.RGBA ? ImageFormat.Png : ImageFormat.Bmp);
-
-            BitmapImage bitmapImage = new();
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.StreamSource = stream;
-            bitmapImage.EndInit();
-            bitmapImage.Freeze();
-            return bitmapImage;
+            return bitmap;
         }
 
-        public static QOIImage ConvertToQOIImage(this BitmapSource image)
+        public static QOIImage ConvertToQOIImage(this SKBitmap image)
         {
-            // Convert BitmapSource to Bitmap
-            Bitmap bitmap;
-            using (MemoryStream outStream = new())
+            int width = image.Width;
+            int height = image.Height;
+            
+            // Ensure pixel format matches.
+            SKBitmap convertedImage;
+            if (image.ColorType != SKColorType.Bgra8888)
             {
-                BitmapEncoder enc = new PngBitmapEncoder();
-                enc.Frames.Add(BitmapFrame.Create(image));
-                enc.Save(outStream);
-                bitmap = new Bitmap(outStream);
+                convertedImage = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul));
+                image.CopyTo(convertedImage);
             }
-
-            int width = bitmap.Width;
-            int height = bitmap.Height;
+            else
+            {
+                // Pixel format is already correct, no conversion necessary.
+                convertedImage = image;
+            }
+            
             QOIImage qoiImage = new((uint)width, (uint)height, ChannelType.RGBA, ColorspaceType.sRGB);
-
-            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-            bool hasAlpha = false;
+            
             // Copy pixel array to new QOIImage object
+            IntPtr bmpData = convertedImage.GetPixels();
             unsafe
             {
                 for (int y = 0; y < height; y++)
                 {
-                    byte* row = (byte*)bmpData.Scan0 + (y * bmpData.Stride);
+                    byte* row = (byte*)bmpData + (y * convertedImage.RowBytes);
                     for (int x = 0; x < width; x++)
                     {
-                        Pixel pixel = new(row[(x * 4) + 2], row[(x * 4) + 1], row[x * 4], row[(x * 4) + 3]);
-                        qoiImage.Pixels[(y * width) + x] = pixel;
-                        if (pixel.Alpha != 255)
-                        {
-                            hasAlpha = true;
-                        }
+                        qoiImage.Pixels[(y * width) + x] = new Pixel(
+                            row[(x * 4) + 2],
+                            row[(x * 4) + 1],
+                            row[x * 4],
+                            row[(x * 4) + 3]);
                     }
                 }
             }
-            qoiImage.Channels = hasAlpha ? ChannelType.RGBA : ChannelType.RGB;
 
-            bitmap.UnlockBits(bmpData);
-            bitmap.Dispose();
+            return qoiImage;
+        }
+
+        public static QOIImage ConvertToQOIImage(this Bitmap image)
+        {
+            int width = image.PixelSize.Width;
+            int height = image.PixelSize.Height;
+            
+            QOIImage qoiImage = new((uint)width, (uint)height, ChannelType.RGBA, ColorspaceType.sRGB);
+            
+            unsafe
+            {
+                fixed (Pixel* pixelBuffer = qoiImage.Pixels)
+                {
+                    using LockedFramebuffer targetBuffer = new((IntPtr)pixelBuffer, new PixelSize(width, height),
+                        width * 4, new Vector(96, 96), PixelFormat.Rgba8888, AlphaFormat.Unpremul, null);
+                    image.CopyPixels(targetBuffer);
+                }
+            }
+
             return qoiImage;
         }
     }

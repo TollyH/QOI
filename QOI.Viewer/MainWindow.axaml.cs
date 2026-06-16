@@ -1,14 +1,18 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Input.Platform;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
+using SkiaSharp;
 
 namespace QOI.Viewer
 {
@@ -17,18 +21,27 @@ namespace QOI.Viewer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string _openFile = "";
+        internal static readonly IReadOnlyList<FilePickerFileType> selectableFiles = new FilePickerFileType[]
+        {
+            new("All Supported Types") { Patterns = new[] { "*.qoi", "*.png", "*.jpg", "*.jpeg" } },
+            new("QOI Image File") { Patterns = new[] {"*.qoi"} },
+            new("PNG Image File") { Patterns = new[] {"*.png"} },
+            new("JPEG Image File") { Patterns = new[] {"*.jpg", "*.jpeg"} },
+        };
+
         private string openFile
         {
-            get => _openFile;
+            get;
             set
             {
-                _openFile = value;
+                field = value;
                 Title = filesInFolder.Length > 0
                     ? $"QOI Image Viewer - ({indexInFolder + 1}/{filesInFolder.Length}) {value}"
                     : "QOI Image Viewer";
             }
-        }
+        } = "";
+
+        private SKBitmap? openBitmap = null;
 
         private string lastOpenedFolder = "";
         private string[] filesInFolder = Array.Empty<string>();
@@ -41,6 +54,8 @@ namespace QOI.Viewer
         private IndexDebugWindow? openIndexWindow = null;
 
         private QOIDecoder.IndexHistoryItem[]?[]? indexHistory = null;
+
+        private readonly ScaleTransform imageScaleTransform = new();
 
         private static readonly Dictionary<ChunkType, string> debugModeColors = new()
         {
@@ -56,6 +71,12 @@ namespace QOI.Viewer
         {
             InitializeComponent();
 
+            imageViewScale.LayoutTransform = imageScaleTransform;
+            
+            // Prevent arrow keys/scrolling being captured for navigation.
+            AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
+            imageScroll.AddHandler(PointerWheelChangedEvent, ScrollViewer_PointerWheelChanged, RoutingStrategies.Tunnel);
+
             string[] args = Environment.GetCommandLineArgs();
 
             configDebugMode.IsChecked = args.Contains("--debug");
@@ -69,7 +90,7 @@ namespace QOI.Viewer
             {
                 BulkConverter converter = new();
                 converter.AddFiles(args);
-                _ = converter.ShowDialog();
+                converter.Show(this);
             }
         }
 
@@ -91,9 +112,9 @@ namespace QOI.Viewer
             HashSet<ChunkType> excludeChunks = new();
             foreach (MenuItem chunkExcludeItem in chunkHideMenu.Items.OfType<MenuItem>())
             {
-                if (chunkExcludeItem.IsChecked)
+                if (chunkExcludeItem is { IsChecked: true, Tag: ChunkType chunkType })
                 {
-                    excludeChunks.Add((ChunkType)chunkExcludeItem.Tag);
+                    excludeChunks.Add(chunkType);
                 }
             }
 
@@ -113,9 +134,10 @@ namespace QOI.Viewer
                         decodeStopwatch.Stop();
                         Stopwatch convertStopwatch = Stopwatch.StartNew();
                         ChangeImageSource(excludeChunks.Count > 0
-                            ? newQOIImage.ConvertToBitmapImageFilterChunks(decoder.GenerateDebugPixels(
+                            ? newQOIImage.ConvertToAvaloniaBitmapImageFilterChunks(decoder.GenerateDebugPixels(
                                 File.ReadAllBytes(path).AsSpan()[14..], (uint)newQOIImage.Pixels.Length), excludeChunks)
-                            : newQOIImage.ConvertToBitmapImage());
+                            : newQOIImage.ConvertToAvaloniaBitmapImage());
+                        openBitmap = newQOIImage.ConvertToSKBitmapImage();
                         convertStopwatch.Stop();
                         trailingData = newQOIImage.TrailingData;
 
@@ -142,32 +164,34 @@ namespace QOI.Viewer
 
                         if (!decoder.EndTagWasPresent)
                         {
-                            _ = MessageBox.Show("End tag was missing from loaded file.",
-                            "End Tag Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            new MessageBox("End tag was missing from loaded file.",
+                            "End Tag Missing", MessageBoxImage.Warning).Show();
                         }
 
                         break;
                     case "png":
                     case "jpg":
                     case "jpeg":
-                        ChangeImageSource(new BitmapImage(new Uri(path)));
+                        ChangeImageSource(new Bitmap(path));
+                        openBitmap = SKBitmap.Decode(path);
                         ShowEmptyStats();
 
                         indexHistory = null;
                         break;
                     default:
-                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
-                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                        new MessageBox("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                            "Invalid Type", MessageBoxImage.Error).Show();
                         return;
                 }
             }
+            // ReSharper disable once RedundantCatchClause
             catch
             {
 #if DEBUG
                 throw;
 #else
-                _ = MessageBox.Show("Failed to open image. It may be missing or corrupt.",
-                "Image Read Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                new MessageBox("Failed to open image. It may be missing or corrupt.",
+                "Image Read Failed", MessageBoxImage.Error).Show();
                 return;
 #endif
             }
@@ -178,7 +202,8 @@ namespace QOI.Viewer
             {
                 lastOpenedFolder = newFolder;
                 filesInFolder = Directory.GetFiles(newFolder).Where(
-                    x => Path.GetExtension(x).ToLower() is ".qoi" or ".png" or ".jpg" or ".jpeg").ToArray();
+                    x => Path.GetExtension(x).ToLower() is ".qoi" or ".png" or ".jpg" or ".jpeg")
+                    .OrderBy(f => f, StringComparer.CurrentCultureIgnoreCase).ToArray();
                 indexInFolder = Array.IndexOf(filesInFolder, fullPath);
             }
             openFile = fullPath;
@@ -191,6 +216,11 @@ namespace QOI.Viewer
         public void SaveImage(string path)
         {
             string extension = path.Split('.')[^1].ToLower();
+
+            if (imageView.Source is not Bitmap bitmap || openBitmap is null)
+            {
+                return;
+            }
 
             try
             {
@@ -206,59 +236,59 @@ namespace QOI.Viewer
                                 UseRUNChunks = !configNoEncodeRUN.IsChecked,
                                 UseRGBChunks = !configNoEncodeRGB.IsChecked
                             };
-                            QOIImage toSave = ((BitmapSource)imageView.Source).ConvertToQOIImage();
+                            QOIImage toSave = bitmap.ConvertToQOIImage();
                             toSave.TrailingData = trailingData;
                             encoder.SaveImageFile(path, toSave);
                             break;
                         }
                     case "png":
                         {
-                            PngBitmapEncoder encoder = new();
-                            encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imageView.Source));
                             using FileStream fileStream = new(path, FileMode.Create);
-                            encoder.Save(fileStream);
+                            openBitmap.Encode(fileStream, SKEncodedImageFormat.Png, 100);
                             break;
                         }
                     case "jpg":
                     case "jpeg":
                         {
-                            JpegBitmapEncoder encoder = new();
-                            encoder.Frames.Add(BitmapFrame.Create((BitmapSource)imageView.Source));
                             using FileStream fileStream = new(path, FileMode.Create);
-                            encoder.Save(fileStream);
+                            openBitmap.Encode(fileStream, SKEncodedImageFormat.Jpeg, 100);
                             break;
                         }
                     default:
-                        _ = MessageBox.Show("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
-                            "Invalid Type", MessageBoxButton.OK, MessageBoxImage.Error);
+                        new MessageBox("Invalid file type, must be one of: .qoi, .png, .jpg, or .jpeg",
+                            "Invalid Type", MessageBoxImage.Error).Show();
                         return;
                 }
             }
+            // ReSharper disable once RedundantCatchClause
             catch
             {
 #if DEBUG
                 throw;
 #else
-                _ = MessageBox.Show("Failed to save image. You may not have permission to save to the given path.",
-                "Image Save Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                new MessageBox("Failed to save image. You may not have permission to save to the given path.",
+                "Image Save Failed", MessageBoxImage.Error).Show();
                 return;
 #endif
             }
         }
 
-        public void LoadImageFromClipboard()
+        public async Task LoadImageFromClipboard()
         {
-            if (!Clipboard.ContainsImage())
+            Task<Bitmap?>? imageTask = Clipboard?.TryGetBitmapAsync();
+            Bitmap? image;
+            if (imageTask is null || (image = await imageTask) is null)
             {
-                _ = MessageBox.Show("There is no image currently on the clipboard.", "No Clipboard Image",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                new MessageBox("There is no image currently on the clipboard.", "No Clipboard Image",
+                    MessageBoxImage.Error).Show();
                 return;
             }
-            ChangeImageSource(ClipboardImageConvert.GetBitmapSourceFromClipboard());
+            ChangeImageSource(image);
             lastOpenedFolder = "";
             indexInFolder = 0;
             filesInFolder = Array.Empty<string>();
             openFile = "";
+            openBitmap = null;
             ShowEmptyStats();
             if (!zoomedSinceFit)
             {
@@ -273,11 +303,11 @@ namespace QOI.Viewer
                 return;
             }
 
-            double toFitX = imageScroll.ActualWidth / imageView.Width;
-            double toFitY = imageScroll.ActualHeight / imageView.Height;
+            double toFitX = imageScroll.Bounds.Width / imageView.Width;
+            double toFitY = imageScroll.Bounds.Height / imageView.Height;
             double toFitBoth = Math.Min(toFitY, toFitX);
-            imageViewScale.ScaleX = toFitBoth;
-            imageViewScale.ScaleY = toFitBoth;
+            imageScaleTransform.ScaleX = toFitBoth;
+            imageScaleTransform.ScaleY = toFitBoth;
 
             zoomedSinceFit = false;
         }
@@ -288,54 +318,46 @@ namespace QOI.Viewer
             {
                 return;
             }
-            imageViewScale.ScaleX = 1;
-            imageViewScale.ScaleY = 1;
+            imageScaleTransform.ScaleX = 1;
+            imageScaleTransform.ScaleY = 1;
             zoomedSinceFit = true;
         }
 
-        public void PromptFileOpen()
+        public async Task PromptFileOpen()
         {
-            OpenFileDialog fileDialog = new()
+            IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
             {
-                CheckFileExists = true,
-                Filter = "All Supported Types|*.qoi;*.png;*.jpg;*.jpeg" +
-                "|QOI Image File|*.qoi" +
-                "|PNG Image File|*.png" +
-                "|JPEG Image File|*.jpg;*.jpeg"
-            };
+                FileTypeFilter = selectableFiles
+            });
 
-            if (!fileDialog.ShowDialog(this) ?? true)
+            if (files.Count == 0)
             {
                 return;
             }
 
-            LoadImage(fileDialog.FileName);
+            LoadImage(files[0].Path.LocalPath);
         }
 
-        public void PromptFileSave()
+        public async Task PromptFileSave()
         {
-            if (imageView.Source is null or not BitmapSource)
+            if (imageView.Source is not Bitmap)
             {
                 return;
             }
 
-            SaveFileDialog fileDialog = new()
+            IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
             {
-                CheckPathExists = true,
-                DefaultExt = ".qoi",
-                AddExtension = true,
-                Filter = "QOI Image File|*.qoi" +
-                "|PNG Image File|*.png" +
-                "|JPEG Image File|*.jpg;*.jpeg",
-                FileName = Path.GetFileNameWithoutExtension(openFile)
-            };
+                DefaultExtension = ".qoi",
+                FileTypeChoices = selectableFiles,
+                SuggestedFileName = Path.GetFileNameWithoutExtension(openFile)
+            });
 
-            if (!fileDialog.ShowDialog(this) ?? true)
+            if (file is null)
             {
                 return;
             }
 
-            SaveImage(fileDialog.FileName);
+            SaveImage(file.Path.LocalPath);
         }
 
         public void Reload()
@@ -348,19 +370,19 @@ namespace QOI.Viewer
 
         public void CopyImageToClipboard()
         {
-            if (imageView.Source is null or not BitmapSource)
+            if (imageView.Source is not Bitmap bitmap || Clipboard is null)
             {
                 return;
             }
 
-            Clipboard.SetImage((BitmapSource)imageView.Source);
+            Clipboard.SetBitmapAsync(bitmap);
         }
 
-        private void ChangeImageSource(BitmapSource? source)
+        private void ChangeImageSource(Bitmap? source)
         {
             imageView.Source = source;
-            imageView.Width = source?.PixelWidth ?? double.NaN;
-            imageView.Height = source?.PixelHeight ?? double.NaN;
+            imageView.Width = source?.PixelSize.Width ?? double.NaN;
+            imageView.Height = source?.PixelSize.Height ?? double.NaN;
         }
 
         private void OpenIndexView()
@@ -381,11 +403,10 @@ namespace QOI.Viewer
             }
         }
 
-        private void UpdateIndexViewFromMousePosition()
+        private void UpdateIndexViewFromMousePosition(Point mousePos)
         {
             if (openIndexWindow is not null && indexHistory is not null)
             {
-                Point mousePos = Mouse.GetPosition(imageView);
                 int clickedPixelIndex = (int)((int)mousePos.Y * imageView.Width + mousePos.X);
 
                 if (clickedPixelIndex < indexHistory.Length)
@@ -403,21 +424,21 @@ namespace QOI.Viewer
                     }
                     openIndexWindow.SetColors(history);
 
-                    selectedIndexPixelOutline.Visibility = Visibility.Visible;
+                    selectedIndexPixelOutline.IsVisible = true;
                     Canvas.SetLeft(selectedIndexPixelOutline, clickedPixelIndex % imageView.Width);
                     Canvas.SetTop(selectedIndexPixelOutline, clickedPixelIndex / imageView.Width);
                 }
             }
         }
 
-        private void OpenItem_Click(object sender, RoutedEventArgs e)
+        private async void OpenItem_Click(object sender, RoutedEventArgs e)
         {
-            PromptFileOpen();
+            await PromptFileOpen();
         }
 
-        private void saveItem_Click(object sender, RoutedEventArgs e)
+        private async void saveItem_Click(object sender, RoutedEventArgs e)
         {
-            PromptFileSave();
+            await PromptFileSave();
         }
 
         private void ReloadOnClick(object sender, RoutedEventArgs e)
@@ -425,33 +446,24 @@ namespace QOI.Viewer
             Reload();
         }
 
-        private void Window_Drop(object sender, DragEventArgs e)
+        private void configNearestNeighbor_Checked(object sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e.Property != MenuItem.IsCheckedProperty)
             {
-                string[] files = (string[])(e.Data.GetData(DataFormats.FileDrop) ?? Array.Empty<string>());
-                LoadImage(files[0]);
+                return;
             }
-        }
-
-        private void configNearestNeighbor_Checked(object sender, RoutedEventArgs e)
-        {
-            RenderOptions.SetBitmapScalingMode(imageView, configNearestNeighbor.IsChecked
-                ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
+            RenderOptions.SetBitmapInterpolationMode(imageView, configNearestNeighbor.IsChecked
+                ? BitmapInterpolationMode.None : BitmapInterpolationMode.HighQuality);
         }
 
         private void BulkConverterItem_Click(object sender, RoutedEventArgs e)
         {
-            _ = new BulkConverter().ShowDialog();
+            new BulkConverter().Show();
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
+        private async void Window_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (InputManager.Current.IsInMenuMode)
-            {
-                // If user is navigating the menu with their keyboard, don't run key bindings
-                return;
-            }
+            e.Handled = true;
             switch (e.Key)
             {
                 case Key.Left:
@@ -469,30 +481,30 @@ namespace QOI.Viewer
                     LoadImage(filesInFolder[++indexInFolder]);
                     break;
                 case Key.V:
-                    if (Keyboard.Modifiers == ModifierKeys.Control && Clipboard.ContainsImage())
+                    if (e.KeyModifiers == KeyModifiers.Control)
                     {
-                        LoadImageFromClipboard();
+                        await LoadImageFromClipboard();
                     }
                     break;
                 case Key.F:
                     FitImage();
                     break;
                 case Key.O:
-                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    if (e.KeyModifiers == KeyModifiers.Control)
                     {
-                        PromptFileOpen();
+                        await PromptFileOpen();
                     }
                     break;
                 case Key.S:
-                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    if (e.KeyModifiers == KeyModifiers.Control)
                     {
-                        PromptFileSave();
+                        await PromptFileSave();
                     }
                     break;
                 case Key.B:
-                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    if (e.KeyModifiers == KeyModifiers.Control)
                     {
-                        _ = new BulkConverter().ShowDialog();
+                        new BulkConverter().Show();
                     }
                     break;
                 case Key.N:
@@ -503,7 +515,7 @@ namespace QOI.Viewer
                     Reload();
                     break;
                 case Key.C:
-                    if (Keyboard.Modifiers == ModifierKeys.Control)
+                    if (e.KeyModifiers == KeyModifiers.Control)
                     {
                         CopyImageToClipboard();
                     }
@@ -514,35 +526,38 @@ namespace QOI.Viewer
                 case Key.I:
                     OpenIndexView();
                     break;
+                default:
+                    e.Handled = false;
+                    break;
             }
         }
 
-        private void openClipboardItem_Click(object sender, RoutedEventArgs e)
+        private async void openClipboardItem_Click(object sender, RoutedEventArgs e)
         {
-            LoadImageFromClipboard();
+            await LoadImageFromClipboard();
         }
 
-        private void FileMenuItem_SubmenuOpened(object sender, RoutedEventArgs e)
+        private async void FileMenuItem_SubmenuOpened(object sender, RoutedEventArgs e)
         {
-            openClipboardItem.IsEnabled = Clipboard.ContainsImage();
-            saveItem.IsEnabled = imageView.Source is BitmapSource;
-            copyItem.IsEnabled = imageView.Source is BitmapSource;
+            openClipboardItem.IsEnabled = Clipboard is not null && await Clipboard.TryGetBitmapAsync() is not null;
+            saveItem.IsEnabled = imageView.Source is Bitmap;
+            copyItem.IsEnabled = imageView.Source is Bitmap;
         }
 
-        private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        private void ScrollViewer_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if (e.KeyModifiers == KeyModifiers.Control)
             {
                 // Prevent zoom from also scrolling
                 e.Handled = true;
 
                 // Logarithmic zooming makes zoom look more "linear" to the eye
-                double value = Math.Exp(Math.Log(imageViewScale.ScaleX) + (e.Delta * 0.0005));
-                if (imageViewScale.ScaleX + value > 0 && imageViewScale.ScaleY + value > 0)
+                double value = Math.Exp(Math.Log(imageScaleTransform.ScaleX) + (e.Delta.Y * 0.06));
+                if (imageScaleTransform.ScaleX + value > 0 && imageScaleTransform.ScaleY + value > 0)
                 {
                     zoomedSinceFit = true;
-                    imageViewScale.ScaleX = value;
-                    imageViewScale.ScaleY = value;
+                    imageScaleTransform.ScaleX = value;
+                    imageScaleTransform.ScaleY = value;
                 }
             }
         }
@@ -570,16 +585,16 @@ namespace QOI.Viewer
             ZoomActualSize();
         }
 
-        private void imageView_MouseDown(object sender, MouseButtonEventArgs e)
+        private void imageView_PointerPressed(object sender, PointerPressedEventArgs e)
         {
-            UpdateIndexViewFromMousePosition();
+            UpdateIndexViewFromMousePosition(e.GetPosition(imageView));
         }
 
-        private void imageView_MouseMove(object sender, MouseEventArgs e)
+        private void imageView_PointerMoved(object sender, PointerEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
+            if (e.Properties.IsLeftButtonPressed)
             {
-                UpdateIndexViewFromMousePosition();
+                UpdateIndexViewFromMousePosition(e.GetPosition(imageView));
             }
         }
 
@@ -592,8 +607,8 @@ namespace QOI.Viewer
         {
             openIndexWindow = null;
 
-            selectedIndexPixelOutline.Visibility = Visibility.Collapsed;
-            lastUpdatedIndexPixelOutline.Visibility = Visibility.Collapsed;
+            selectedIndexPixelOutline.IsVisible = false;
+            lastUpdatedIndexPixelOutline.IsVisible = false;
         }
 
         private void openIndexWindow_IndexSelectionChanged(object? sender, EventArgs e)
@@ -602,11 +617,11 @@ namespace QOI.Viewer
 
             if (index is null)
             {
-                lastUpdatedIndexPixelOutline.Visibility = Visibility.Collapsed;
+                lastUpdatedIndexPixelOutline.IsVisible = false;
                 return;
             }
 
-            lastUpdatedIndexPixelOutline.Visibility = Visibility.Visible;
+            lastUpdatedIndexPixelOutline.IsVisible = true;
             Canvas.SetLeft(lastUpdatedIndexPixelOutline, (int)(index.Value % imageView.Width));
             Canvas.SetTop(lastUpdatedIndexPixelOutline, (int)(index.Value / imageView.Width));
         }
